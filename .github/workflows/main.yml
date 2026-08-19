@@ -1,0 +1,29 @@
+name: Telegram News Bot
+
+on:
+  workflow_dispatch:
+
+  schedule:
+    - cron: "*/30 * * * *"
+
+jobs:
+  run-news-bot:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Download project
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+
+      - name: Install requirements
+        run: pip install -r requirements.txt
+
+      - name: Run news bot
+        env:
+          TELEGRAM_TOKEN: ${{ secrets.TELEGRAM_TOKEN }}
+          TELEGRAM_CHANNEL: ${{ secrets.TELEGRAM_CHANNEL }}
+        run: python 5top_news_.py
