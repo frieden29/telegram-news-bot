@@ -6,6 +6,9 @@ on:
   schedule:
     - cron: "*/30 * * * *"
 
+permissions:
+  contents: write
+
 jobs:
   run-news-bot:
     runs-on: ubuntu-latest
@@ -27,3 +30,13 @@ jobs:
           TELEGRAM_TOKEN: ${{ secrets.TELEGRAM_TOKEN }}
           TELEGRAM_CHANNEL: ${{ secrets.TELEGRAM_CHANNEL }}
         run: python 5top_news_.py
+
+      - name: Save published news list
+        run: |
+          if [ -f published_top_news.txt ]; then
+            git config user.name "github-actions[bot]"
+            git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+            git add published_top_news.txt
+            git diff --cached --quiet || git commit -m "Update published news"
+            git push
+          fi
