@@ -1101,16 +1101,16 @@ def shorten_title(title, max_length=180):
 
 def build_message(story):
 
-    display_title = shorten_title(
-        story["title"],
-        max_length=180
-    )
+    title = html.escape(story["title"])
+    source = html.escape(story["source"])
+    link = html.escape(story["link"], quote=True)
 
-    return f"""📰 {display_title}
+    return f"""📰 {title}
 
-{story["icon"]} المصدر: {story["source"]}
+{story["icon"]} المصدر: {source}
 
-🔗 {story["link"]}
+🔗 <a href="{link}">اضغط على الرابط التالي للانتقال لمصدر الخبر</a>
+
 """
 
 
