@@ -1,4 +1,4 @@
-name: Telegram News Bot
+name: Syria News Bot
 
 on:
   workflow_dispatch:
@@ -25,20 +25,22 @@ jobs:
       - name: Install requirements
         run: pip install -r requirements.txt
 
-      - name: Run news bot
+      - name: Run Syria news bot
         env:
           TELEGRAM_TOKEN: ${{ secrets.TELEGRAM_TOKEN }}
           TELEGRAM_CHANNEL: ${{ secrets.TELEGRAM_CHANNEL }}
-          FACEBOOK_PAGE_TOKEN: ${{ secrets.FACEBOOK_PAGE_TOKEN }}
-          FACEBOOK_PAGE_ID: ${{ secrets.FACEBOOK_PAGE_ID }}
-        run: python 11Top_News.py
+        run: python 22Syria_News.py
 
-      - name: Save published news list
+      - name: Save published Telegram news
         run: |
-          if [ -f published_top_news.txt ]; then
+          if [ -f published_telegram_news.json ]; then
             git config user.name "github-actions[bot]"
             git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-            git add published_top_news.txt
-            git diff --cached --quiet || git commit -m "Update published news"
-            git push
+
+            git add published_telegram_news.json
+
+            git diff --cached --quiet || git commit -m "Update published Telegram news"
+
+            git pull --rebase origin main
+            git push origin main
           fi
