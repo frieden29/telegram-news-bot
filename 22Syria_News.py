@@ -1083,9 +1083,30 @@ def choose_new_story(
 # Telegram
 # =========================================================
 
+def shorten_title(title, max_length=180):
+
+    title = clean_title(title)
+
+    if len(title) <= max_length:
+        return title
+
+    shortened = title[:max_length]
+
+    # لا نقطع آخر كلمة من المنتصف
+    if " " in shortened:
+        shortened = shortened.rsplit(" ", 1)[0]
+
+    return shortened.rstrip("،,.-:؛ ") + "…"
+
+
 def build_message(story):
 
-    return f"""📰 {story["title"]}
+    display_title = shorten_title(
+        story["title"],
+        max_length=180
+    )
+
+    return f"""📰 {display_title}
 
 {story["icon"]} المصدر: {story["source"]}
 
