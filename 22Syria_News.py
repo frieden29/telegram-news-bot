@@ -32,37 +32,36 @@ if not TELEGRAM_CHANNEL:
 # =========================================================
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+PUBLISHED_FILE = os.path.join(BASE_DIR, "published_telegram_news.json")
 
-PUBLISHED_FILE = os.path.join(
-    BASE_DIR,
-    "published_telegram_news.json"
-)
+MAX_PUBLISHED_RECORDS = 2000
 
 
 # =========================================================
-# كلمات مرتبطة بسوريا
+# كلمات سوريا
 # =========================================================
 
 SYRIA_KEYWORDS_AR = [
-    "سوريا", "سورية", "سوري", "سوريين",
-    "السوري", "السورية", "السوريين",
-    "دمشق", "حلب", "إدلب", "حمص", "حماة",
+    "سوريا", "سورية", "سوري", "سوريون", "سوريين",
+    "السوري", "السورية", "السوريون", "السوريين",
+    "دمشق", "حلب", "إدلب", "ادلب", "حمص", "حماة",
     "درعا", "السويداء", "اللاذقية", "طرطوس",
-    "دير الزور", "الرقة", "الحسكة",
-    "القنيطرة", "الجولان"
+    "دير الزور", "الرقة", "الحسكة", "القنيطرة",
+    "الجولان", "بشار الأسد", "الأسد", "قسد"
 ]
 
 SYRIA_KEYWORDS_EN = [
     "syria", "syrian", "damascus", "aleppo",
     "idlib", "homs", "hama", "daraa",
     "sweida", "suwayda", "latakia", "tartus",
-    "deir ez-zor", "deir al-zor",
-    "raqqa", "hasakah", "golan"
+    "deir ez-zor", "deir al-zor", "raqqa",
+    "hasakah", "golan", "bashar al-assad",
+    "bashar assad", "sdf"
 ]
 
 
 # =========================================================
-# المصادر المباشرة
+# المصادر السورية/العربية المباشرة
 # =========================================================
 
 DIRECT_SOURCES = [
@@ -78,13 +77,6 @@ DIRECT_SOURCES = [
         "url": "https://www.syria.tv/",
         "domain": "syria.tv",
         "icon": "🔵",
-        "syria_only": False
-    },
-    {
-        "name": "الإخبارية السورية",
-        "url": "https://alikhbariah.com/",
-        "domain": "alikhbariah.com",
-        "icon": "🇸🇾",
         "syria_only": False
     },
     {
@@ -126,11 +118,16 @@ DIRECT_SOURCES = [
 
 
 # =========================================================
-# مصادر عربية عبر Google News RSS
-# لأنها أعطت 403 أو لم تُظهر خبراً مناسباً مباشرة
+# المصادر العربية التي سنقرأها عبر Google News RSS
+# الإخبارية نُقلت إلى هنا بسبب 403 على GitHub Actions
 # =========================================================
 
 RSS_ARABIC_SOURCES = [
+    {
+        "name": "الإخبارية السورية",
+        "domain": "alikhbariah.com",
+        "icon": "🇸🇾"
+    },
     {
         "name": "العربية",
         "domain": "alarabiya.net",
@@ -150,7 +147,7 @@ RSS_ARABIC_SOURCES = [
 
 
 # =========================================================
-# 11 مصادر عالمية
+# المصادر العالمية
 # =========================================================
 
 GLOBAL_SOURCES = [
@@ -213,7 +210,7 @@ GLOBAL_SOURCES = [
 
 
 # =========================================================
-# Headers
+# HTTP
 # =========================================================
 
 HEADERS = {
@@ -227,7 +224,7 @@ HEADERS = {
 
 
 # =========================================================
-# استبعاد العناصر غير الإخبارية
+# عناصر غير إخبارية
 # =========================================================
 
 BLOCKED_TITLES = [
@@ -254,12 +251,28 @@ BLOCKED_URL_PARTS = [
     "/login",
     "/search",
     "/author/",
-    "/authors/"
+    "/authors/",
+    "/tag/"
 ]
 
 
 # =========================================================
-# أدوات النص
+# كلمات عامة نستبعدها عند مقارنة الأحداث
+# =========================================================
+
+STOP_WORDS = {
+    "في", "من", "إلى", "الى", "على", "عن", "مع", "بعد", "قبل",
+    "بين", "هذا", "هذه", "ذلك", "تلك", "هو", "هي", "أن", "ان",
+    "ما", "ماذا", "كيف", "لماذا", "هل", "أو", "او", "و",
+    "قال", "قالت", "يقول", "حول", "خلال", "وسط", "عبر",
+    "جديد", "جديدة", "آخر", "اخر", "أحدث",
+    "the", "a", "an", "of", "in", "on", "to", "for", "and",
+    "with", "after", "before", "from", "says", "said"
+}
+
+
+# =========================================================
+# تنظيف النص
 # =========================================================
 
 def clean_text(text):
@@ -267,16 +280,42 @@ def clean_text(text):
         return ""
 
     text = html.unescape(text)
+    text = re.sub(r"\s+", " ", text)
 
-    return re.sub(
-        r"\s+",
-        " ",
+    return text.strip()
+
+
+def clean_title(text):
+    text = clean_text(text)
+
+    prefixes = [
+        r"^Read article:\s*",
+        r"^Read Article:\s*",
+        r"^READ ARTICLE:\s*",
+        r"^اقرأ المقال:\s*",
+        r"^شاهد:\s*",
+    ]
+
+    for pattern in prefixes:
+        text = re.sub(
+            pattern,
+            "",
+            text,
+            flags=re.IGNORECASE
+        )
+
+    # إزالة بعض الكلمات التي تلتصق بالعنوان في المواقع
+    text = re.sub(
+        r"^\s*(فيديو|صور)\s*[,:\-]\s*",
+        "",
         text
-    ).strip()
+    )
+
+    return clean_text(text)
 
 
 def normalize_title(text):
-    text = clean_text(text).lower()
+    text = clean_title(text).lower()
 
     text = re.sub(
         r"[^\w\u0600-\u06FF\s]",
@@ -310,29 +349,34 @@ def has_arabic(text):
 
 
 # =========================================================
-# هل الخبر متعلق بسوريا؟
+# فحص علاقة الخبر بسوريا
 # =========================================================
 
 def is_syria_news(text):
     text = clean_text(text).lower()
+
+    if not text:
+        return False
 
     for keyword in SYRIA_KEYWORDS_AR:
         if keyword.lower() in text:
             return True
 
     for keyword in SYRIA_KEYWORDS_EN:
-        if keyword.lower() in text:
+        pattern = r"\b" + re.escape(keyword.lower()) + r"\b"
+
+        if re.search(pattern, text):
             return True
 
     return False
 
 
 # =========================================================
-# ترجمة للعربية
+# الترجمة
 # =========================================================
 
 def translate_to_arabic(title):
-    title = clean_text(title)
+    title = clean_title(title)
 
     if not title:
         return ""
@@ -346,7 +390,7 @@ def translate_to_arabic(title):
             target="ar"
         ).translate(title)
 
-        return clean_text(translated)
+        return clean_title(translated)
 
     except Exception as e:
         print("⚠️ فشلت الترجمة:", e)
@@ -354,7 +398,7 @@ def translate_to_arabic(title):
 
 
 # =========================================================
-# سجل الأخبار
+# ملف الأخبار المنشورة
 # =========================================================
 
 def load_published():
@@ -367,16 +411,14 @@ def load_published():
             "r",
             encoding="utf-8"
         ) as file:
+
             data = json.load(file)
 
             if isinstance(data, list):
                 return data
 
     except Exception as e:
-        print(
-            "⚠️ تعذر قراءة سجل الأخبار:",
-            e
-        )
+        print("⚠️ تعذر قراءة سجل الأخبار:", e)
 
     return []
 
@@ -387,6 +429,7 @@ def save_published(records):
         "w",
         encoding="utf-8"
     ) as file:
+
         json.dump(
             records,
             file,
@@ -396,7 +439,7 @@ def save_published(records):
 
 
 # =========================================================
-# منع التكرار
+# مقارنة العناوين
 # =========================================================
 
 def title_similarity(title1, title2):
@@ -412,6 +455,43 @@ def title_similarity(title1, title2):
         second
     ).ratio()
 
+
+def important_words(title):
+    title = normalize_title(title)
+
+    words = set()
+
+    for word in title.split():
+        if len(word) < 3:
+            continue
+
+        if word in STOP_WORDS:
+            continue
+
+        words.add(word)
+
+    return words
+
+
+def event_similarity(title1, title2):
+    words1 = important_words(title1)
+    words2 = important_words(title2)
+
+    if not words1 or not words2:
+        return 0
+
+    intersection = words1.intersection(words2)
+    union = words1.union(words2)
+
+    if not union:
+        return 0
+
+    return len(intersection) / len(union)
+
+
+# =========================================================
+# منع التكرار
+# =========================================================
 
 def was_published(story, records):
     new_link = clean_link(
@@ -433,23 +513,34 @@ def was_published(story, records):
             ""
         )
 
-        # نفس الرابط
-        if (
-            new_link
-            and old_link
-            and new_link == old_link
-        ):
-            return True
+        # 1. الرابط نفسه
+        if new_link and old_link:
+            if new_link == old_link:
+                print("🔁 الرابط منشور سابقاً")
+                return True
 
-        # نفس الخبر تقريباً
+        # 2. تشابه نص العنوان
         similarity = title_similarity(
             new_title,
             old_title
         )
 
-        if similarity >= 0.82:
+        if similarity >= 0.80:
             print(
-                "🔁 خبر مشابه منشور سابقاً:",
+                "🔁 عنوان مشابه منشور سابقاً:",
+                old_title
+            )
+            return True
+
+        # 3. تشابه كلمات الحدث
+        event_score = event_similarity(
+            new_title,
+            old_title
+        )
+
+        if event_score >= 0.55:
+            print(
+                "🔁 يبدو أنه نفس الحدث:",
                 old_title
             )
             return True
@@ -465,40 +556,31 @@ def remember_story(story, records):
         "published_at": int(time.time())
     })
 
-    if len(records) > 1500:
-        records[:] = records[-1500:]
+    if len(records) > MAX_PUBLISHED_RECORDS:
+        records[:] = records[-MAX_PUBLISHED_RECORDS:]
 
     save_published(records)
 
 
 # =========================================================
-# التحقق من الرابط
+# الروابط المباشرة
 # =========================================================
 
 def same_domain(link, domain):
     try:
-        hostname = (
-            urlparse(link).hostname
-            or ""
-        )
+        hostname = urlparse(link).hostname or ""
 
         return (
             hostname == domain
-            or hostname.endswith(
-                "." + domain
-            )
+            or hostname.endswith("." + domain)
         )
 
     except Exception:
         return False
 
 
-def looks_like_article(
-    title,
-    link,
-    domain
-):
-    title = clean_text(title)
+def looks_like_article(title, link, domain):
+    title = clean_title(title)
 
     if not title or not link:
         return False
@@ -512,16 +594,19 @@ def looks_like_article(
     if title in BLOCKED_TITLES:
         return False
 
+    lower_title = title.lower()
+
+    for blocked in BLOCKED_TITLES:
+        if lower_title == blocked.lower():
+            return False
+
     lower_link = link.lower()
 
     for part in BLOCKED_URL_PARTS:
         if part in lower_link:
             return False
 
-    if not same_domain(
-        link,
-        domain
-    ):
+    if not same_domain(link, domain):
         return False
 
     parsed = urlparse(link)
@@ -533,7 +618,7 @@ def looks_like_article(
 
 
 # =========================================================
-# استخراج خبر مباشر
+# خبر من موقع مباشر
 # =========================================================
 
 def get_direct_story(source):
@@ -547,14 +632,9 @@ def get_direct_story(source):
         response.raise_for_status()
 
     except Exception as e:
-        print(
-            "❌ فشل الاتصال:",
-            source["name"]
-        )
-
+        print("❌ فشل الاتصال:", source["name"])
         print(e)
         return None
-
 
     soup = BeautifulSoup(
         response.text,
@@ -564,13 +644,12 @@ def get_direct_story(source):
     seen_titles = set()
     seen_links = set()
 
-
     for tag in soup.find_all(
         "a",
         href=True
     ):
 
-        title = clean_text(
+        title = clean_title(
             tag.get_text(
                 " ",
                 strip=True
@@ -578,7 +657,7 @@ def get_direct_story(source):
         )
 
         if len(title) < 10:
-            title = clean_text(
+            title = clean_title(
                 tag.get(
                     "aria-label",
                     ""
@@ -607,18 +686,11 @@ def get_direct_story(source):
         ):
             continue
 
-        if source.get(
-            "syria_only",
-            False
-        ):
-            if not is_syria_news(
-                title + " " + link
-            ):
+        if source.get("syria_only"):
+            if not is_syria_news(title):
                 continue
 
-        normalized = normalize_title(
-            title
-        )
+        normalized = normalize_title(title)
 
         if normalized in seen_titles:
             continue
@@ -626,12 +698,8 @@ def get_direct_story(source):
         if link in seen_links:
             continue
 
-        seen_titles.add(
-            normalized
-        )
-        seen_links.add(
-            link
-        )
+        seen_titles.add(normalized)
+        seen_links.add(link)
 
         return {
             "title": title,
@@ -647,19 +715,15 @@ def get_direct_story(source):
 # Google News RSS
 # =========================================================
 
-def google_news_rss_url(
-    domain,
-    arabic=False
-):
+def google_news_rss_url(domain, arabic=False):
+
     query = (
-        "(Syria OR Syrian OR Damascus OR Aleppo "
-        "OR سوريا OR سورية OR سوري OR دمشق) "
+        '("Syria" OR "Syrian" OR "Damascus" OR "Aleppo" '
+        'OR "سوريا" OR "سورية" OR "دمشق" OR "حلب") '
         f"site:{domain}"
     )
 
-    encoded_query = urllib.parse.quote(
-        query
-    )
+    encoded_query = urllib.parse.quote(query)
 
     if arabic:
         return (
@@ -680,13 +744,11 @@ def google_news_rss_url(
 
 
 # =========================================================
-# استخراج خبر عبر RSS
+# خبر RSS
 # =========================================================
 
-def get_rss_story(
-    source,
-    arabic=False
-):
+def get_rss_story(source, arabic=False):
+
     rss_url = google_news_rss_url(
         source["domain"],
         arabic=arabic
@@ -702,13 +764,9 @@ def get_rss_story(
         response.raise_for_status()
 
     except Exception as e:
-        print(
-            "❌ فشل RSS:",
-            source["name"]
-        )
+        print("❌ فشل RSS:", source["name"])
         print(e)
         return None
-
 
     soup = BeautifulSoup(
         response.content,
@@ -717,15 +775,15 @@ def get_rss_story(
 
     items = soup.find_all("item")
 
+    for item in items[:30]:
 
-    for item in items[:20]:
         title_tag = item.find("title")
         link_tag = item.find("link")
 
         if not title_tag or not link_tag:
             continue
 
-        original_title = clean_text(
+        original_title = clean_title(
             title_tag.get_text()
         )
 
@@ -733,15 +791,20 @@ def get_rss_story(
             link_tag.get_text()
         )
 
-        original_title = re.sub(
-            r"\s+-\s+[^-]+$",
-            "",
-            original_title
-        ).strip()
+        # Google News يضيف اسم المصدر في نهاية العنوان
+        source_suffix = re.escape(
+            source["name"]
+        )
 
-        if not is_syria_news(
-            original_title
-        ):
+        original_title = re.sub(
+            rf"\s+-\s+{source_suffix}\s*$",
+            "",
+            original_title,
+            flags=re.IGNORECASE
+        )
+
+        # فلترة سوريا مرة أخرى بعد الحصول على النتيجة
+        if not is_syria_news(original_title):
             continue
 
         title = translate_to_arabic(
@@ -749,6 +812,13 @@ def get_rss_story(
         )
 
         if not title:
+            continue
+
+        # فحص إضافي بعد الترجمة
+        if not (
+            is_syria_news(original_title)
+            or is_syria_news(title)
+        ):
             continue
 
         return {
@@ -776,9 +846,8 @@ def build_message(story):
 
 
 def send_to_telegram(story):
-    message = build_message(
-        story
-    )
+
+    message = build_message(story)
 
     data = urllib.parse.urlencode({
         "chat_id": TELEGRAM_CHANNEL,
@@ -796,53 +865,44 @@ def send_to_telegram(story):
         data=data,
         timeout=30
     ) as response:
+
         result = json.loads(
-            response
-            .read()
-            .decode("utf-8")
+            response.read().decode("utf-8")
         )
 
-    return result.get(
-        "ok",
-        False
-    )
+    return result.get("ok", False)
 
 
 # =========================================================
-# نشر خبر واحد مع منع التكرار
+# النشر
 # =========================================================
 
-def publish_story(
-    story,
-    published
-):
+def publish_story(story, published):
+
     if not story:
         return False
+
+    story["title"] = clean_title(
+        story["title"]
+    )
 
     if was_published(
         story,
         published
     ):
-        print(
-            "⏭️ لن يتم إعادة نشره."
-        )
+        print("⏭️ لن يتم إعادة نشره.")
         return False
 
-    print(
-        "🆕 خبر جديد:"
-    )
-    print(
-        story["title"]
-    )
+    print("🆕 خبر جديد:")
+    print(story["title"])
 
     try:
-        if send_to_telegram(
-            story
-        ):
-            print(
-                "✅ تم النشر على Telegram"
-            )
+        if send_to_telegram(story):
 
+            print("✅ تم النشر على Telegram")
+
+            # مهم جداً:
+            # نحفظ فور نجاح Telegram
             remember_story(
                 story,
                 published
@@ -850,15 +910,11 @@ def publish_story(
 
             return True
 
-        print(
-            "❌ Telegram لم يؤكد النشر"
-        )
+        print("❌ Telegram لم يؤكد النشر")
 
     except Exception as e:
-        print(
-            "❌ خطأ Telegram:",
-            e
-        )
+        print("❌ خطأ Telegram:")
+        print(e)
 
     return False
 
@@ -873,25 +929,31 @@ print("بوت أخبار سوريا - 22 مصدراً")
 print("=" * 70)
 
 published = load_published()
+
+print(
+    "📚 عدد الأخبار الموجودة في سجل منع التكرار:",
+    len(published)
+)
+
 total_new = 0
 
 
+# =========================================================
 # المصادر المباشرة
+# =========================================================
+
 for source in DIRECT_SOURCES:
+
     print()
     print(
         "🔎 فحص مباشر:",
         source["name"]
     )
 
-    story = get_direct_story(
-        source
-    )
+    story = get_direct_story(source)
 
     if not story:
-        print(
-            "لا يوجد خبر مناسب حالياً."
-        )
+        print("لا يوجد خبر مناسب حالياً.")
         continue
 
     if publish_story(
@@ -900,11 +962,15 @@ for source in DIRECT_SOURCES:
     ):
         total_new += 1
 
-    time.sleep(2)
+    time.sleep(1)
 
 
-# المصادر العربية عبر RSS
+# =========================================================
+# RSS عربي
+# =========================================================
+
 for source in RSS_ARABIC_SOURCES:
+
     print()
     print(
         "📰 فحص RSS عربي:",
@@ -928,11 +994,15 @@ for source in RSS_ARABIC_SOURCES:
     ):
         total_new += 1
 
-    time.sleep(2)
+    time.sleep(1)
 
 
+# =========================================================
 # المصادر العالمية
+# =========================================================
+
 for source in GLOBAL_SOURCES:
+
     print()
     print(
         "🌍 فحص عالمي:",
@@ -956,16 +1026,18 @@ for source in GLOBAL_SOURCES:
     ):
         total_new += 1
 
-    time.sleep(2)
+    time.sleep(1)
 
+
+# =========================================================
+# النهاية
+# =========================================================
 
 print()
 print("=" * 70)
 
 if total_new == 0:
-    print(
-        "لا توجد أخبار سورية جديدة للنشر."
-    )
+    print("لا توجد أخبار سورية جديدة للنشر.")
 else:
     print(
         "تم نشر",
