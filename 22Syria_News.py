@@ -11,11 +11,13 @@ from bs4 import BeautifulSoup
 from difflib import SequenceMatcher
 from deep_translator import GoogleTranslator
 from email.utils import parsedate_to_datetime
+from dotenv import load_dotenv
 
 
 # =========================================================
 # Telegram
 # =========================================================
+load_dotenv()
 
 TELEGRAM_TOKEN = os.environ.get("TELEGRAM_TOKEN")
 TELEGRAM_CHANNEL = os.environ.get("TELEGRAM_CHANNEL")
@@ -832,6 +834,63 @@ def extract_item_date(item):
 
 
 # =========================================================
+# استخراج مختصر الخبر من RSS
+# =========================================================
+
+def extract_item_summary(item):
+
+    summary = ""
+
+    for name in [
+        "description",
+        "summary",
+        "content",
+        "content:encoded"
+    ]:
+
+        tag = item.find(name)
+
+        if tag:
+            summary = tag.get_text(
+                " ",
+                strip=True
+            )
+            break
+
+    if not summary:
+        return ""
+
+    # إزالة HTML إن وجد داخل الوصف
+    summary = BeautifulSoup(
+        summary,
+        "html.parser"
+    ).get_text(
+        " ",
+        strip=True
+    )
+
+    summary = clean_text(
+        summary
+    )
+
+    # منع الوصف الطويل جداً
+    if len(summary) > 450:
+
+        summary = summary[:450]
+
+        # نحاول عدم قطع آخر كلمة
+        if " " in summary:
+            summary = summary.rsplit(
+                " ",
+                1
+            )[0]
+
+        summary += "..."
+
+    return summary
+
+
+# =========================================================
 # RSS مباشر
 # =========================================================
 
@@ -960,9 +1019,43 @@ def get_rss_candidates(
             continue
 
 
+        summary = extract_item_summary(
+            item
+        )
+
+        if summary:
+
+            if source.get(
+                "language"
+            ) != "ar":
+
+                try:
+
+                    summary = GoogleTranslator(
+                        source="auto",
+                        target="ar"
+                    ).translate(
+                        summary
+                    )
+
+                    summary = clean_text(
+                        summary
+                    )
+
+                except Exception as e:
+
+                    print(
+                        "⚠️ فشلت ترجمة مختصر الخبر:",
+                        e
+                    )
+
+                    summary = ""
+
+
         candidates.append({
             "title": arabic_title,
             "original_title": original_title,
+            "summary": summary,
             "link": link,
             "source": source["name"],
             "icon": source["icon"],
@@ -1277,8 +1370,30 @@ def build_message(story):
         quote=True
     )
 
+    summary = clean_text(
+        story.get(
+            "summary",
+            ""
+        )
+    )
 
-    return f"""📰 {title}
+    if summary:
+
+        summary = html.escape(
+            summary
+        )
+
+        return f"""📰 <b>{title}</b>
+
+📝 <b>مختصر الخبر:</b>
+{summary}
+
+{story["icon"]} المصدر: {source}
+
+🔗 <a href="{link}">مصدر الخبر</a>"""
+
+
+    return f"""📰 <b>{title}</b>
 
 {story["icon"]} المصدر: {source}
 
@@ -1618,3 +1733,4 @@ else:
 
 
 print("=" * 75)
+
