@@ -31,9 +31,11 @@ jobs:
         env:
           TELEGRAM_TOKEN: ${{ secrets.TELEGRAM_TOKEN }}
           TELEGRAM_CHANNEL: ${{ secrets.TELEGRAM_CHANNEL }}
-        run: python 22Syria_News.py
+          FACEBOOK_PAGE_ID: ${{ secrets.FACEBOOK_PAGE_ID }}
+          FACEBOOK_PAGE_TOKEN: ${{ secrets.FACEBOOK_PAGE_TOKEN }}
+        run: python syria_news_bot_telegram_facebook_v10.py
 
-      - name: Save published Telegram news
+      - name: Save published news
         if: always()
         run: |
           if [ -f published_telegram_news.json ]; then
@@ -43,7 +45,7 @@ jobs:
             git add published_telegram_news.json
 
             if ! git diff --cached --quiet; then
-              git commit -m "Update published Telegram news"
+              git commit -m "Update published news"
               git pull --rebase origin main
               git push origin main
             fi
