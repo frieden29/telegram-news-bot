@@ -1,6 +1,9 @@
 const NEWS_URL =
     "https://raw.githubusercontent.com/frieden29/telegram-news-bot/refs/heads/main/news.json";
 
+const STORAGE_KEY =
+    "syria-news-last-data";
+
 const newsList =
     document.getElementById("newsList");
 
@@ -35,7 +38,6 @@ const homeButton =
 const header =
     document.querySelector(".header");
 
-
 let refreshButton = null;
 
 
@@ -65,14 +67,6 @@ function getNewsTime(news) {
     const timestamp =
         Number(news.timestamp || 0);
 
-    /*
-       الأخبار الجديدة من v12 لديها timestamp حقيقي.
-       نحوله هنا إلى توقيت برلين.
-
-       Europe/Berlin تتعامل تلقائياً مع:
-       - التوقيت الصيفي
-       - التوقيت الشتوي
-    */
     if (
         Number.isFinite(timestamp)
         && timestamp > 0
@@ -84,14 +78,11 @@ function getNewsTime(news) {
                 "de-DE",
                 {
                     timeZone: "Europe/Berlin",
-
                     day: "2-digit",
                     month: "2-digit",
                     year: "numeric",
-
                     hour: "2-digit",
                     minute: "2-digit",
-
                     hour12: false
                 }
             ).format(
@@ -109,11 +100,6 @@ function getNewsTime(news) {
         }
     }
 
-
-    /*
-       الأخبار القديمة التي لا تحتوي timestamp.
-       إذا كان لديها وقت قديم نحافظ عليه مؤقتاً.
-    */
 
     const oldTime =
         safeText(news.time);
@@ -161,6 +147,7 @@ function createNewsImage(
         return null;
     }
 
+
     const img =
         document.createElement("img");
 
@@ -184,11 +171,6 @@ function createNewsImage(
         "no-referrer";
 
 
-    /*
-       إذا فشل تحميل الصورة،
-       نحذفها حتى لا يظهر مربع فارغ.
-    */
-
     img.addEventListener(
         "error",
         () => {
@@ -196,6 +178,7 @@ function createNewsImage(
             img.remove();
         }
     );
+
 
     return img;
 }
@@ -230,19 +213,11 @@ function sortNewsByTime(newsItems) {
                     );
 
 
-                /*
-                   الأخبار التي تملك timestamp
-                   تأتي أولاً.
-                */
-
                 if (
                     timeA > 0
                     && timeB > 0
                 ) {
-
-                    return (
-                        timeB - timeA
-                    );
+                    return timeB - timeA;
                 }
 
 
@@ -250,7 +225,6 @@ function sortNewsByTime(newsItems) {
                     timeA > 0
                     && timeB <= 0
                 ) {
-
                     return -1;
                 }
 
@@ -259,18 +233,13 @@ function sortNewsByTime(newsItems) {
                     timeB > 0
                     && timeA <= 0
                 ) {
-
                     return 1;
                 }
 
 
-                /*
-                   الأخبار القديمة التي لا تملك timestamp
-                   نحافظ على ترتيبها الأصلي.
-                */
-
                 return (
-                    a.index - b.index
+                    a.index
+                    - b.index
                 );
             }
         )
@@ -372,7 +341,7 @@ function setRefreshLoading(
 
 
 /* =========================================================
-   الانتقال بين الصفحة الرئيسية والتفاصيل
+   إظهار الرئيسية / التفاصيل
    ========================================================= */
 
 function setHomeVisible(
@@ -487,77 +456,52 @@ function showDetails(news) {
 
     if (detailsLink) {
 
-    const url =
-        safeText(news.url);
+        const url =
+            safeText(news.url);
 
-    detailsLink.classList.toggle(
-        "hidden",
-        !url
-    );
-
-    if (url) {
-
-        detailsLink.href = url;
-
-        detailsLink.target = "_blank";
-
-        detailsLink.rel =
-            "noopener noreferrer";
-
-        detailsLink.onclick =
-            function (event) {
-
-                event.preventDefault();
-
-                event.stopPropagation();
-
-                window.open(
-                    url,
-                    "_blank",
-                    "noopener,noreferrer"
-                );
-            };
-
-    } else {
-
-        detailsLink.removeAttribute(
-            "href"
+        detailsLink.classList.toggle(
+            "hidden",
+            !url
         );
+
+
+        if (url) {
+
+            detailsLink.href =
+                url;
+
+            detailsLink.target =
+                "_blank";
+
+            detailsLink.rel =
+                "noopener noreferrer";
+
+            detailsLink.onclick =
+                function (event) {
+
+                    event.preventDefault();
+
+                    event.stopPropagation();
+
+                    window.open(
+                        url,
+                        "_blank",
+                        "noopener,noreferrer"
+                    );
+                };
+
+        } else {
+
+            detailsLink.removeAttribute(
+                "href"
+            );
+
+            detailsLink.onclick =
+                null;
+        }
     }
-}
-    
-    if (url) {
 
-        detailsLink.href = url;
 
-        detailsLink.target = "_blank";
-
-        detailsLink.rel =
-            "noopener noreferrer";
-
-        detailsLink.onclick =
-            function (event) {
-
-                event.preventDefault();
-
-                event.stopPropagation();
-
-                window.open(
-                    url,
-                    "_blank",
-                    "noopener,noreferrer"
-                );
-            };
-
-    } else {
-
-        detailsLink.removeAttribute(
-            "href"
-        );
-    }
-}
-
-       
     const detailsCard =
         detailsScreen.querySelector(
             ".details-card"
@@ -595,7 +539,9 @@ function showDetails(news) {
     }
 
 
-    setHomeVisible(false);
+    setHomeVisible(
+        false
+    );
 
 
     window.scrollTo({
@@ -640,10 +586,6 @@ function renderNews(newsItems) {
         return;
     }
 
-
-    /*
-       ترتيب الأخبار من الأحدث إلى الأقدم.
-    */
 
     const sortedNews =
         sortNewsByTime(
@@ -828,7 +770,7 @@ function renderNews(newsItems) {
 
             card.addEventListener(
                 "keydown",
-                (event) => {
+                event => {
 
                     if (
                         event.key === "Enter"
@@ -852,6 +794,57 @@ function renderNews(newsItems) {
 
 
 /* =========================================================
+   عرض الأخبار المحفوظة فوراً
+   ========================================================= */
+
+function loadSavedNews() {
+
+    try {
+
+        const savedNews =
+            localStorage.getItem(
+                STORAGE_KEY
+            );
+
+
+        if (!savedNews) {
+            return false;
+        }
+
+
+        const parsedNews =
+            JSON.parse(
+                savedNews
+            );
+
+
+        if (
+            Array.isArray(parsedNews)
+            && parsedNews.length > 0
+        ) {
+
+            renderNews(
+                parsedNews
+            );
+
+            return true;
+        }
+
+
+    } catch (error) {
+
+        console.warn(
+            "تعذر قراءة الأخبار المحفوظة:",
+            error
+        );
+    }
+
+
+    return false;
+}
+
+
+/* =========================================================
    تحميل الأخبار
    ========================================================= */
 
@@ -859,16 +852,38 @@ async function loadNews(
     manualRefresh = false
 ) {
 
+    let hasSavedNews =
+        false;
+
+
+    if (!manualRefresh) {
+
+        hasSavedNews =
+            loadSavedNews();
+
+
+        if (hasSavedNews) {
+
+            if (loadingMessage) {
+
+                loadingMessage.classList.add(
+                    "hidden"
+                );
+            }
+
+        } else if (loadingMessage) {
+
+            loadingMessage.classList.remove(
+                "hidden"
+            );
+        }
+    }
+
+
     if (manualRefresh) {
 
         setRefreshLoading(
             true
-        );
-
-    } else if (loadingMessage) {
-
-        loadingMessage.classList.remove(
-            "hidden"
         );
     }
 
@@ -882,11 +897,6 @@ async function loadNews(
 
 
     try {
-
-        /*
-           Date.now يمنع المتصفح من إعادة نسخة قديمة
-           من news.json.
-        */
 
         const response =
             await fetch(
@@ -909,15 +919,34 @@ async function loadNews(
             await response.json();
 
 
+        if (!Array.isArray(data)) {
+
+            throw new Error(
+                "تنسيق news.json غير صالح"
+            );
+        }
+
+
         renderNews(
             data
         );
 
 
-        /*
-           إذا ضغط المستخدم تحديث،
-           نعيده إلى أعلى قائمة الأخبار.
-        */
+        try {
+
+            localStorage.setItem(
+                STORAGE_KEY,
+                JSON.stringify(data)
+            );
+
+        } catch (error) {
+
+            console.warn(
+                "تعذر حفظ الأخبار:",
+                error
+            );
+        }
+
 
         if (manualRefresh) {
 
@@ -936,20 +965,23 @@ async function loadNews(
         );
 
 
-        if (errorMessage) {
-
-            errorMessage.textContent =
-                "تعذر تحديث الأخبار. تحقق من الاتصال بالإنترنت ثم حاول مرة أخرى.";
-
-            errorMessage.classList.remove(
-                "hidden"
-            );
+        const hasNewsOnScreen =
+            newsList
+            &&
+            newsList.children.length > 0;
 
 
-        } else if (newsList) {
+        if (!hasNewsOnScreen) {
 
-            newsList.innerHTML =
-                '<div class="message error">تعذر تحميل الأخبار.</div>';
+            if (errorMessage) {
+
+                errorMessage.textContent =
+                    "تعذر تحميل الأخبار. تحقق من الاتصال بالإنترنت ثم حاول مرة أخرى.";
+
+                errorMessage.classList.remove(
+                    "hidden"
+                );
+            }
         }
 
 
@@ -1066,8 +1098,14 @@ if (
                 .register(
                     "./sw.js"
                 )
+                .then(
+                    registration => {
+
+                        registration.update();
+                    }
+                )
                 .catch(
-                    (error) => {
+                    error => {
 
                         console.warn(
                             "تعذر تسجيل Service Worker:",
