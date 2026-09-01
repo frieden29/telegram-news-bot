@@ -1,22 +1,17 @@
 const NEWS_URL =
     "https://raw.githubusercontent.com/frieden29/telegram-news-bot/refs/heads/main/news.json";
 
+const newsList =
+    document.getElementById("newsList");
 
-const homeScreen =
-    document.getElementById("homeScreen");
+const loadingMessage =
+    document.getElementById("loadingMessage");
+
+const errorMessage =
+    document.getElementById("errorMessage");
 
 const detailsScreen =
     document.getElementById("detailsScreen");
-
-const newsListElement =
-    document.getElementById("newsList");
-
-const loadingElement =
-    document.getElementById("loading");
-
-const errorElement =
-    document.getElementById("error");
-
 
 const detailsTitle =
     document.getElementById("detailsTitle");
@@ -30,210 +25,624 @@ const detailsSource =
 const detailsTime =
     document.getElementById("detailsTime");
 
-const sourceButton =
-    document.getElementById("sourceButton");
+const detailsLink =
+    document.getElementById("detailsLink");
 
 const homeButton =
-    document.getElementById("homeButton");
+    document.getElementById("homeButton")
+    || document.querySelector(".home-button");
+
+const header =
+    document.querySelector(".header");
 
 
-let newsList = [];
+function safeText(value) {
+
+    if (
+        value === null
+        || value === undefined
+    ) {
+        return "";
+    }
+
+    return String(value).trim();
+}
 
 
-/* ==============================
-   تحميل الأخبار
-============================== */
+function getNewsTime(news) {
+
+    const timeText = safeText(
+        news.time
+    );
+
+    if (
+        timeText
+        && timeText !== "الآن"
+    ) {
+        return timeText;
+    }
+
+    const timestamp = Number(
+        news.timestamp || 0
+    );
+
+    if (
+        Number.isFinite(timestamp)
+        && timestamp > 0
+    ) {
+
+        try {
+
+            return new Intl.DateTimeFormat(
+                "ar-SY",
+                {
+                    timeZone: "Asia/Damascus",
+                    day: "2-digit",
+                    month: "2-digit",
+                    year: "numeric",
+                    hour: "2-digit",
+                    minute: "2-digit",
+                    hour12: false
+                }
+            ).format(
+                new Date(
+                    timestamp * 1000
+                )
+            );
+
+        } catch (error) {
+
+            console.warn(
+                "تعذر تنسيق وقت الخبر:",
+                error
+            );
+        }
+    }
+
+    return "التاريخ غير متوفر";
+}
+
+
+function getNewsImage(news) {
+
+    const image = safeText(
+        news.image
+    );
+
+    if (
+        image.startsWith("https://")
+        || image.startsWith("http://")
+    ) {
+        return image;
+    }
+
+    return "";
+}
+
+
+function createNewsImage(
+    news,
+    className
+) {
+
+    const imageUrl = getNewsImage(
+        news
+    );
+
+    if (!imageUrl) {
+        return null;
+    }
+
+    const img = document.createElement(
+        "img"
+    );
+
+    img.className = className;
+
+    img.src = imageUrl;
+
+    img.alt = safeText(
+        news.title
+    ) || "صورة الخبر";
+
+    img.loading = "lazy";
+    img.decoding = "async";
+    img.referrerPolicy = "no-referrer";
+
+    img.addEventListener(
+        "error",
+        () => {
+            img.remove();
+        }
+    );
+
+    return img;
+}
+
+
+function setHomeVisible(
+    visible
+) {
+
+    if (header) {
+        header.classList.toggle(
+            "hidden",
+            !visible
+        );
+    }
+
+    if (newsList) {
+        newsList.classList.toggle(
+            "hidden",
+            !visible
+        );
+    }
+
+    if (loadingMessage) {
+        loadingMessage.classList.add(
+            "hidden"
+        );
+    }
+
+    if (errorMessage) {
+        errorMessage.classList.add(
+            "hidden"
+        );
+    }
+
+    if (detailsScreen) {
+        detailsScreen.classList.toggle(
+            "hidden",
+            visible
+        );
+    }
+}
+
+
+function showDetails(
+    news
+) {
+
+    if (!detailsScreen) {
+
+        const url = safeText(
+            news.url
+        );
+
+        if (url) {
+            window.open(
+                url,
+                "_blank",
+                "noopener,noreferrer"
+            );
+        }
+
+        return;
+    }
+
+
+    if (detailsTitle) {
+
+        detailsTitle.textContent =
+            safeText(
+                news.title
+            );
+    }
+
+
+    if (detailsDescription) {
+
+        const description =
+            safeText(
+                news.description
+            );
+
+        detailsDescription.textContent =
+            description;
+
+        detailsDescription.classList.toggle(
+            "hidden",
+            !description
+        );
+    }
+
+
+    if (detailsSource) {
+
+        detailsSource.textContent =
+            safeText(
+                news.source
+            );
+    }
+
+
+    if (detailsTime) {
+
+        detailsTime.textContent =
+            getNewsTime(
+                news
+            );
+    }
+
+
+    if (detailsLink) {
+
+        const url = safeText(
+            news.url
+        );
+
+        detailsLink.href =
+            url || "#";
+
+        detailsLink.classList.toggle(
+            "hidden",
+            !url
+        );
+    }
+
+
+    const detailsCard =
+        detailsScreen.querySelector(
+            ".details-card"
+        );
+
+    if (detailsCard) {
+
+        const oldImage =
+            detailsCard.querySelector(
+                ".details-image"
+            );
+
+        if (oldImage) {
+            oldImage.remove();
+        }
+
+        const image =
+            createNewsImage(
+                news,
+                "details-image"
+            );
+
+        if (image) {
+
+            detailsCard.insertBefore(
+                image,
+                detailsCard.firstChild
+            );
+        }
+    }
+
+
+    setHomeVisible(
+        false
+    );
+
+    window.scrollTo({
+        top: 0,
+        behavior: "instant"
+    });
+
+    history.pushState(
+        { details: true },
+        "",
+        "#news"
+    );
+}
+
+
+function renderNews(
+    newsItems
+) {
+
+    if (!newsList) {
+        return;
+    }
+
+    newsList.innerHTML = "";
+
+
+    if (
+        !Array.isArray(newsItems)
+        || newsItems.length === 0
+    ) {
+
+        newsList.innerHTML =
+            '<div class="message">لا توجد أخبار متاحة حالياً.</div>';
+
+        return;
+    }
+
+
+    newsItems.forEach(
+        (news) => {
+
+            const card =
+                document.createElement(
+                    "article"
+                );
+
+            card.className =
+                "news-card";
+
+            card.tabIndex = 0;
+
+            card.setAttribute(
+                "role",
+                "button"
+            );
+
+
+            const mainRow =
+                document.createElement(
+                    "div"
+                );
+
+            mainRow.className =
+                "news-main-row";
+
+
+            const textArea =
+                document.createElement(
+                    "div"
+                );
+
+            textArea.className =
+                "news-text-area";
+
+
+            const title =
+                document.createElement(
+                    "h2"
+                );
+
+            title.className =
+                "news-title";
+
+            title.textContent =
+                safeText(
+                    news.title
+                );
+
+            textArea.appendChild(
+                title
+            );
+
+
+            const descriptionText =
+                safeText(
+                    news.description
+                );
+
+            if (descriptionText) {
+
+                const description =
+                    document.createElement(
+                        "p"
+                    );
+
+                description.className =
+                    "news-description";
+
+                description.textContent =
+                    descriptionText;
+
+                textArea.appendChild(
+                    description
+                );
+            }
+
+
+            mainRow.appendChild(
+                textArea
+            );
+
+
+            const image =
+                createNewsImage(
+                    news,
+                    "news-image"
+                );
+
+            if (image) {
+
+                mainRow.appendChild(
+                    image
+                );
+            }
+
+
+            card.appendChild(
+                mainRow
+            );
+
+
+            const meta =
+                document.createElement(
+                    "div"
+                );
+
+            meta.className =
+                "news-meta";
+
+
+            const source =
+                document.createElement(
+                    "span"
+                );
+
+            source.className =
+                "news-source";
+
+            source.textContent =
+                safeText(
+                    news.source
+                );
+
+
+            const time =
+                document.createElement(
+                    "span"
+                );
+
+            time.className =
+                "news-time";
+
+            time.textContent =
+                getNewsTime(
+                    news
+                );
+
+
+            meta.appendChild(
+                source
+            );
+
+            meta.appendChild(
+                time
+            );
+
+            card.appendChild(
+                meta
+            );
+
+
+            const openNews = () => {
+                showDetails(
+                    news
+                );
+            };
+
+
+            card.addEventListener(
+                "click",
+                openNews
+            );
+
+
+            card.addEventListener(
+                "keydown",
+                (event) => {
+
+                    if (
+                        event.key === "Enter"
+                        || event.key === " "
+                    ) {
+
+                        event.preventDefault();
+
+                        openNews();
+                    }
+                }
+            );
+
+
+            newsList.appendChild(
+                card
+            );
+        }
+    );
+}
+
 
 async function loadNews() {
 
-    loadingElement.classList.remove("hidden");
-    errorElement.classList.add("hidden");
+    if (loadingMessage) {
+
+        loadingMessage.classList.remove(
+            "hidden"
+        );
+    }
+
+    if (errorMessage) {
+
+        errorMessage.classList.add(
+            "hidden"
+        );
+    }
+
 
     try {
 
-        /*
-         * نضيف الوقت إلى الرابط حتى لا يعرض
-         * GitHub نسخة قديمة من news.json
-         */
-        const url =
-            `${NEWS_URL}?t=${Date.now()}`;
-
         const response =
             await fetch(
-                url,
+                `${NEWS_URL}?v=${Date.now()}`,
                 {
                     cache: "no-store"
                 }
             );
 
+
         if (!response.ok) {
 
             throw new Error(
-                "HTTP " + response.status
+                `HTTP ${response.status}`
             );
         }
 
-        newsList =
+
+        const data =
             await response.json();
 
-        renderNews();
 
-        loadingElement.classList.add(
-            "hidden"
+        renderNews(
+            data
         );
+
 
     } catch (error) {
 
-        console.error(error);
-
-        loadingElement.classList.add(
-            "hidden"
+        console.error(
+            "تعذر تحميل الأخبار:",
+            error
         );
 
-        errorElement.classList.remove(
-            "hidden"
-        );
-    }
-}
 
+        if (errorMessage) {
 
-/* ==============================
-   عرض الأخبار
-============================== */
+            errorMessage.textContent =
+                "تعذر تحميل الأخبار. تحقق من الاتصال بالإنترنت ثم حاول مرة أخرى.";
 
-function renderNews() {
-
-    newsListElement.innerHTML = "";
-
-    newsList.forEach((news, index) => {
-
-        const card =
-            document.createElement("article");
-
-        card.className =
-            "news-card";
-
-
-        const title =
-            document.createElement("h2");
-
-        title.className =
-            "news-title";
-
-        title.textContent =
-            news.title || "";
-
-
-        card.appendChild(title);
-
-
-        if (
-            news.description &&
-            news.description.trim() !== ""
-        ) {
-
-            const description =
-                document.createElement("p");
-
-            description.className =
-                "news-description";
-
-            description.textContent =
-                news.description;
-
-            card.appendChild(
-                description
+            errorMessage.classList.remove(
+                "hidden"
             );
+
+        } else if (newsList) {
+
+            newsList.innerHTML =
+                '<div class="message error">تعذر تحميل الأخبار.</div>';
         }
 
 
-        const meta =
-            document.createElement("div");
+    } finally {
 
-        meta.className =
-            "news-meta";
+        if (loadingMessage) {
 
-
-        const source =
-            document.createElement("span");
-
-        source.className =
-            "news-source";
-
-        source.textContent =
-            news.source || "";
-
-
-        const time =
-            document.createElement("span");
-
-        time.className =
-            "news-time";
-
-        time.textContent =
-            news.time || "";
-
-
-        meta.appendChild(source);
-        meta.appendChild(time);
-
-        card.appendChild(meta);
-
-
-        card.addEventListener(
-            "click",
-            () => {
-                showDetails(index);
-            }
-        );
-
-
-        newsListElement.appendChild(
-            card
-        );
-    });
+            loadingMessage.classList.add(
+                "hidden"
+            );
+        }
+    }
 }
 
 
-/* ==============================
-   صفحة تفاصيل الخبر
-============================== */
+function goHome() {
 
-function showDetails(index) {
+    setHomeVisible(
+        true
+    );
 
-    const news =
-        newsList[index];
+    if (
+        location.hash === "#news"
+    ) {
 
-    if (!news) {
-        return;
+        history.replaceState(
+            null,
+            "",
+            location.pathname
+            + location.search
+        );
     }
 
-
-    detailsTitle.textContent =
-        news.title || "";
-
-    detailsDescription.textContent =
-        news.description || "";
-
-    detailsSource.textContent =
-        news.source || "";
-
-    detailsTime.textContent =
-        news.time || "";
-
-    sourceButton.href =
-        news.url || "#";
-
-
-    homeScreen.classList.add(
-        "hidden"
-    );
-
-    detailsScreen.classList.remove(
-        "hidden"
-    );
-
-
     window.scrollTo({
         top: 0,
         behavior: "instant"
@@ -241,57 +650,66 @@ function showDetails(index) {
 }
 
 
-/* ==============================
-   العودة إلى الصفحة الرئيسية
-============================== */
+if (homeButton) {
 
-function showHome() {
-
-    detailsScreen.classList.add(
-        "hidden"
+    homeButton.addEventListener(
+        "click",
+        goHome
     );
-
-    homeScreen.classList.remove(
-        "hidden"
-    );
-
-    window.scrollTo({
-        top: 0,
-        behavior: "instant"
-    });
 }
 
 
-homeButton.addEventListener(
-    "click",
-    showHome
+window.addEventListener(
+    "popstate",
+    () => {
+
+        if (
+            location.hash !== "#news"
+        ) {
+
+            setHomeVisible(
+                true
+            );
+        }
+    }
 );
 
 
-/* ==============================
-   Service Worker
-============================== */
+document.addEventListener(
+    "DOMContentLoaded",
+    () => {
 
-if ("serviceWorker" in navigator) {
+        setHomeVisible(
+            true
+        );
+
+        loadNews();
+    }
+);
+
+
+if (
+    "serviceWorker"
+    in navigator
+) {
 
     window.addEventListener(
         "load",
         () => {
 
             navigator.serviceWorker
-                .register("sw.js")
-                .catch(error => {
+                .register(
+                    "./sw.js"
+                )
+                .catch(
+                    (error) => {
 
-                    console.error(
-                        "Service Worker:",
-                        error
-                    );
-                });
+                        console.warn(
+                            "تعذر تسجيل Service Worker:",
+                            error
+                        );
+                    }
+                );
         }
     );
 }
-
-
-/* تشغيل التطبيق */
-
-loadNews();
