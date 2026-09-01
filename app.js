@@ -487,19 +487,77 @@ function showDetails(news) {
 
     if (detailsLink) {
 
-        const url =
-            safeText(news.url);
+    const url =
+        safeText(news.url);
 
-        detailsLink.href =
-            url || "#";
+    detailsLink.classList.toggle(
+        "hidden",
+        !url
+    );
 
-        detailsLink.classList.toggle(
-            "hidden",
-            !url
+    if (url) {
+
+        detailsLink.href = url;
+
+        detailsLink.target = "_blank";
+
+        detailsLink.rel =
+            "noopener noreferrer";
+
+        detailsLink.onclick =
+            function (event) {
+
+                event.preventDefault();
+
+                event.stopPropagation();
+
+                window.open(
+                    url,
+                    "_blank",
+                    "noopener,noreferrer"
+                );
+            };
+
+    } else {
+
+        detailsLink.removeAttribute(
+            "href"
         );
     }
+}
+    
+    if (url) {
 
+        detailsLink.href = url;
 
+        detailsLink.target = "_blank";
+
+        detailsLink.rel =
+            "noopener noreferrer";
+
+        detailsLink.onclick =
+            function (event) {
+
+                event.preventDefault();
+
+                event.stopPropagation();
+
+                window.open(
+                    url,
+                    "_blank",
+                    "noopener,noreferrer"
+                );
+            };
+
+    } else {
+
+        detailsLink.removeAttribute(
+            "href"
+        );
+    }
+}
+
+       
     const detailsCard =
         detailsScreen.querySelector(
             ".details-card"
