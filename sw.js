@@ -1,5 +1,5 @@
 const CACHE_NAME =
-    "syria-news-v3";
+    "nabd-syria-v4";
 
 const APP_FILES = [
     "./",
@@ -11,7 +11,7 @@ const APP_FILES = [
 
 
 /* =========================================================
-   تثبيت Service Worker
+   INSTALL
    ========================================================= */
 
 self.addEventListener(
@@ -39,7 +39,7 @@ self.addEventListener(
 
 
 /* =========================================================
-   التفعيل وحذف الكاش القديم
+   ACTIVATE
    ========================================================= */
 
 self.addEventListener(
@@ -48,40 +48,36 @@ self.addEventListener(
 
         event.waitUntil(
 
-            Promise.all([
+            caches
+                .keys()
+                .then(
+                    keys => {
 
-                caches
-                    .keys()
-                    .then(
-                        keys => {
+                        return Promise.all(
 
-                            return Promise.all(
-
-                                keys
-                                    .filter(
-                                        key =>
-                                            key !== CACHE_NAME
-                                    )
-                                    .map(
-                                        key =>
-                                            caches.delete(
-                                                key
-                                            )
-                                    )
-                            );
-                        }
-                    ),
-
-                self.clients.claim()
-
-            ])
+                            keys
+                                .filter(
+                                    key =>
+                                        key !== CACHE_NAME
+                                )
+                                .map(
+                                    key =>
+                                        caches.delete(key)
+                                )
+                        );
+                    }
+                )
+                .then(
+                    () =>
+                        self.clients.claim()
+                )
         );
     }
 );
 
 
 /* =========================================================
-   جلب الملفات
+   FETCH
    ========================================================= */
 
 self.addEventListener(
@@ -93,8 +89,7 @@ self.addEventListener(
 
 
         if (
-            request.method
-            !== "GET"
+            request.method !== "GET"
         ) {
             return;
         }
@@ -107,8 +102,11 @@ self.addEventListener(
 
 
         /*
-         * news.json:
-         * دائماً من الإنترنت.
+         * الأخبار:
+         * الإنترنت دائماً.
+         *
+         * app.js سيحفظ آخر نسخة
+         * في localStorage.
          */
 
         if (
@@ -132,13 +130,8 @@ self.addEventListener(
 
 
         /*
-         * app.js
-         * style.css
-         * index.html
-         * الصفحة الرئيسية
-         *
+         * ملفات التطبيق الرئيسية:
          * الإنترنت أولاً.
-         * وإذا لم يتوفر الإنترنت نستخدم الكاش.
          */
 
         if (
@@ -170,11 +163,10 @@ self.addEventListener(
 
                             if (
                                 response
-                                &&
-                                response.ok
+                                && response.ok
                             ) {
 
-                                const responseCopy =
+                                const copy =
                                     response.clone();
 
 
@@ -187,7 +179,7 @@ self.addEventListener(
 
                                             cache.put(
                                                 request,
-                                                responseCopy
+                                                copy
                                             );
                                         }
                                     );
@@ -212,64 +204,21 @@ self.addEventListener(
 
 
         /*
-         * باقي الملفات:
-         * الكاش أولاً،
-         * ثم الإنترنت.
+         * بقية الملفات.
          */
 
         event.respondWith(
 
             caches
-                .match(
-                    request
-                )
+                .match(request)
                 .then(
-                    cachedResponse => {
+                    cached => {
 
-                        if (
-                            cachedResponse
-                        ) {
-                            return cachedResponse;
-                        }
-
-
-                        return fetch(
-                            request
-                        )
-                            .then(
-                                response => {
-
-                                    if (
-                                        !response
-                                        ||
-                                        !response.ok
-                                    ) {
-                                        return response;
-                                    }
-
-
-                                    const responseCopy =
-                                        response.clone();
-
-
-                                    caches
-                                        .open(
-                                            CACHE_NAME
-                                        )
-                                        .then(
-                                            cache => {
-
-                                                cache.put(
-                                                    request,
-                                                    responseCopy
-                                                );
-                                            }
-                                        );
-
-
-                                    return response;
-                                }
-                            );
+                        return (
+                            cached
+                            ||
+                            fetch(request)
+                        );
                     }
                 )
         );
