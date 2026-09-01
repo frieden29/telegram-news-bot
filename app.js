@@ -28,7 +28,8 @@ const detailsTime =
     document.getElementById("detailsTime");
 
 const detailsLink =
-    document.getElementById("detailsLink");
+    document.getElementById("detailsLink")
+    || document.querySelector(".source-button");
 
 const homeButton =
     document.getElementById("homeButton")
@@ -183,19 +184,46 @@ function createNewsImage(
    ترتيب الأخبار
    ========================================================= */
 
+function getSortTimestamp(news) {
+
+    const now =
+        Math.floor(Date.now() / 1000);
+
+    const publishedAt =
+        Number(news.published_at || 0);
+
+    if (publishedAt > 0) {
+        return publishedAt;
+    }
+
+    const sourceTimestamp =
+        Number(news.timestamp || 0);
+
+    /*
+     * إذا أرسل المصدر وقتاً مستقبلياً
+     * بأكثر من 5 دقائق فلا نعطيه الأولوية.
+     */
+    if (
+        sourceTimestamp > 0
+        && sourceTimestamp <= now + 300
+    ) {
+        return sourceTimestamp;
+    }
+
+    return 0;
+}
+
+
 function sortNewsByTime(newsItems) {
 
     return [...newsItems].sort(
         (a, b) => {
 
-            const timeA =
-                Number(a.timestamp || 0);
-
-            const timeB =
-                Number(b.timestamp || 0);
-
-
-            return timeB - timeA;
+            return (
+                getSortTimestamp(b)
+                -
+                getSortTimestamp(a)
+            );
         }
     );
 }
