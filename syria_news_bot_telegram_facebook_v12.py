@@ -452,18 +452,26 @@ def save_story_for_app(
         )
 
 
-    new_item = {
-        "title": title,
-        "description": description,
-        "source": source_name,
-        "category": "سوريا",
-        "time": format_story_time(
-            timestamp
-        ),
-        "timestamp": timestamp,
-        "image": image,
-        "url": link
-    }
+   
+    published_at = int(time.time())
+
+new_item = {
+    "title": title,
+    "description": description,
+    "source": source_name,
+    "category": "سوريا",
+
+    # وقت الخبر كما يرسله المصدر
+    "timestamp": timestamp,
+
+    # وقت دخول الخبر فعلياً إلى نبض سوريا
+    "published_at": published_at,
+
+    "time": format_story_time(published_at),
+
+    "image": image,
+    "url": link
+}
 
 
     app_news = [
