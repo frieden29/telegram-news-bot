@@ -36,6 +36,13 @@ const header =
     document.querySelector(".header");
 
 
+let refreshButton = null;
+
+
+/* =========================================================
+   نص آمن
+   ========================================================= */
+
 function safeText(value) {
 
     if (
@@ -49,23 +56,23 @@ function safeText(value) {
 }
 
 
+/* =========================================================
+   توقيت برلين
+   ========================================================= */
+
 function getNewsTime(news) {
 
-    const timeText = safeText(
-        news.time
-    );
+    const timestamp =
+        Number(news.timestamp || 0);
 
-    if (
-        timeText
-        && timeText !== "الآن"
-    ) {
-        return timeText;
-    }
+    /*
+       الأخبار الجديدة من v12 لديها timestamp حقيقي.
+       نحوله هنا إلى توقيت برلين.
 
-    const timestamp = Number(
-        news.timestamp || 0
-    );
-
+       Europe/Berlin تتعامل تلقائياً مع:
+       - التوقيت الصيفي
+       - التوقيت الشتوي
+    */
     if (
         Number.isFinite(timestamp)
         && timestamp > 0
@@ -74,14 +81,17 @@ function getNewsTime(news) {
         try {
 
             return new Intl.DateTimeFormat(
-                "ar-SY",
+                "de-DE",
                 {
-                    timeZone: "Asia/Damascus",
+                    timeZone: "Europe/Berlin",
+
                     day: "2-digit",
                     month: "2-digit",
                     year: "numeric",
+
                     hour: "2-digit",
                     minute: "2-digit",
+
                     hour12: false
                 }
             ).format(
@@ -93,21 +103,40 @@ function getNewsTime(news) {
         } catch (error) {
 
             console.warn(
-                "تعذر تنسيق وقت الخبر:",
+                "تعذر تحويل توقيت الخبر:",
                 error
             );
         }
+    }
+
+
+    /*
+       الأخبار القديمة التي لا تحتوي timestamp.
+       إذا كان لديها وقت قديم نحافظ عليه مؤقتاً.
+    */
+
+    const oldTime =
+        safeText(news.time);
+
+    if (
+        oldTime
+        && oldTime !== "الآن"
+    ) {
+        return oldTime;
     }
 
     return "التاريخ غير متوفر";
 }
 
 
+/* =========================================================
+   صورة الخبر
+   ========================================================= */
+
 function getNewsImage(news) {
 
-    const image = safeText(
-        news.image
-    );
+    const image =
+        safeText(news.image);
 
     if (
         image.startsWith("https://")
@@ -125,33 +154,45 @@ function createNewsImage(
     className
 ) {
 
-    const imageUrl = getNewsImage(
-        news
-    );
+    const imageUrl =
+        getNewsImage(news);
 
     if (!imageUrl) {
         return null;
     }
 
-    const img = document.createElement(
-        "img"
-    );
+    const img =
+        document.createElement("img");
 
-    img.className = className;
+    img.className =
+        className;
 
-    img.src = imageUrl;
+    img.src =
+        imageUrl;
 
-    img.alt = safeText(
-        news.title
-    ) || "صورة الخبر";
+    img.alt =
+        safeText(news.title)
+        || "صورة الخبر";
 
-    img.loading = "lazy";
-    img.decoding = "async";
-    img.referrerPolicy = "no-referrer";
+    img.loading =
+        "lazy";
+
+    img.decoding =
+        "async";
+
+    img.referrerPolicy =
+        "no-referrer";
+
+
+    /*
+       إذا فشل تحميل الصورة،
+       نحذفها حتى لا يظهر مربع فارغ.
+    */
 
     img.addEventListener(
         "error",
         () => {
+
             img.remove();
         }
     );
@@ -160,37 +201,220 @@ function createNewsImage(
 }
 
 
+/* =========================================================
+   ترتيب الأخبار
+   ========================================================= */
+
+function sortNewsByTime(newsItems) {
+
+    return newsItems
+        .map(
+            (news, index) => ({
+                news,
+                index
+            })
+        )
+        .sort(
+            (a, b) => {
+
+                const timeA =
+                    Number(
+                        a.news.timestamp
+                        || 0
+                    );
+
+                const timeB =
+                    Number(
+                        b.news.timestamp
+                        || 0
+                    );
+
+
+                /*
+                   الأخبار التي تملك timestamp
+                   تأتي أولاً.
+                */
+
+                if (
+                    timeA > 0
+                    && timeB > 0
+                ) {
+
+                    return (
+                        timeB - timeA
+                    );
+                }
+
+
+                if (
+                    timeA > 0
+                    && timeB <= 0
+                ) {
+
+                    return -1;
+                }
+
+
+                if (
+                    timeB > 0
+                    && timeA <= 0
+                ) {
+
+                    return 1;
+                }
+
+
+                /*
+                   الأخبار القديمة التي لا تملك timestamp
+                   نحافظ على ترتيبها الأصلي.
+                */
+
+                return (
+                    a.index - b.index
+                );
+            }
+        )
+        .map(
+            item => item.news
+        );
+}
+
+
+/* =========================================================
+   زر تحديث الأخبار
+   ========================================================= */
+
+function createRefreshButton() {
+
+    if (
+        !header
+        || document.getElementById(
+            "refreshNewsButton"
+        )
+    ) {
+        return;
+    }
+
+
+    const headerActions =
+        document.createElement("div");
+
+    headerActions.className =
+        "header-actions";
+
+
+    refreshButton =
+        document.createElement("button");
+
+    refreshButton.id =
+        "refreshNewsButton";
+
+    refreshButton.className =
+        "refresh-button";
+
+    refreshButton.type =
+        "button";
+
+    refreshButton.innerHTML =
+        '<span class="refresh-icon">↻</span> تحديث الأخبار';
+
+
+    refreshButton.addEventListener(
+        "click",
+        async () => {
+
+            await loadNews(true);
+        }
+    );
+
+
+    headerActions.appendChild(
+        refreshButton
+    );
+
+
+    header.appendChild(
+        headerActions
+    );
+}
+
+
+/* =========================================================
+   حالة زر التحديث
+   ========================================================= */
+
+function setRefreshLoading(
+    isLoading
+) {
+
+    if (!refreshButton) {
+        return;
+    }
+
+
+    if (isLoading) {
+
+        refreshButton.disabled =
+            true;
+
+        refreshButton.innerHTML =
+            '<span class="refresh-icon rotating">↻</span> جارٍ التحديث...';
+
+    } else {
+
+        refreshButton.disabled =
+            false;
+
+        refreshButton.innerHTML =
+            '<span class="refresh-icon">↻</span> تحديث الأخبار';
+    }
+}
+
+
+/* =========================================================
+   الانتقال بين الصفحة الرئيسية والتفاصيل
+   ========================================================= */
+
 function setHomeVisible(
     visible
 ) {
 
     if (header) {
+
         header.classList.toggle(
             "hidden",
             !visible
         );
     }
 
+
     if (newsList) {
+
         newsList.classList.toggle(
             "hidden",
             !visible
         );
     }
 
+
     if (loadingMessage) {
+
         loadingMessage.classList.add(
             "hidden"
         );
     }
 
+
     if (errorMessage) {
+
         errorMessage.classList.add(
             "hidden"
         );
     }
 
+
     if (detailsScreen) {
+
         detailsScreen.classList.toggle(
             "hidden",
             visible
@@ -199,17 +423,19 @@ function setHomeVisible(
 }
 
 
-function showDetails(
-    news
-) {
+/* =========================================================
+   صفحة تفاصيل الخبر
+   ========================================================= */
+
+function showDetails(news) {
 
     if (!detailsScreen) {
 
-        const url = safeText(
-            news.url
-        );
+        const url =
+            safeText(news.url);
 
         if (url) {
+
             window.open(
                 url,
                 "_blank",
@@ -224,9 +450,7 @@ function showDetails(
     if (detailsTitle) {
 
         detailsTitle.textContent =
-            safeText(
-                news.title
-            );
+            safeText(news.title);
     }
 
 
@@ -250,26 +474,21 @@ function showDetails(
     if (detailsSource) {
 
         detailsSource.textContent =
-            safeText(
-                news.source
-            );
+            safeText(news.source);
     }
 
 
     if (detailsTime) {
 
         detailsTime.textContent =
-            getNewsTime(
-                news
-            );
+            getNewsTime(news);
     }
 
 
     if (detailsLink) {
 
-        const url = safeText(
-            news.url
-        );
+        const url =
+            safeText(news.url);
 
         detailsLink.href =
             url || "#";
@@ -286,6 +505,7 @@ function showDetails(
             ".details-card"
         );
 
+
     if (detailsCard) {
 
         const oldImage =
@@ -293,15 +513,19 @@ function showDetails(
                 ".details-image"
             );
 
+
         if (oldImage) {
+
             oldImage.remove();
         }
+
 
         const image =
             createNewsImage(
                 news,
                 "details-image"
             );
+
 
         if (image) {
 
@@ -313,32 +537,38 @@ function showDetails(
     }
 
 
-    setHomeVisible(
-        false
-    );
+    setHomeVisible(false);
+
 
     window.scrollTo({
         top: 0,
         behavior: "instant"
     });
 
+
     history.pushState(
-        { details: true },
+        {
+            details: true
+        },
         "",
         "#news"
     );
 }
 
 
-function renderNews(
-    newsItems
-) {
+/* =========================================================
+   عرض الأخبار
+   ========================================================= */
+
+function renderNews(newsItems) {
 
     if (!newsList) {
         return;
     }
 
-    newsList.innerHTML = "";
+
+    newsList.innerHTML =
+        "";
 
 
     if (
@@ -353,7 +583,17 @@ function renderNews(
     }
 
 
-    newsItems.forEach(
+    /*
+       ترتيب الأخبار من الأحدث إلى الأقدم.
+    */
+
+    const sortedNews =
+        sortNewsByTime(
+            newsItems
+        );
+
+
+    sortedNews.forEach(
         (news) => {
 
             const card =
@@ -361,10 +601,12 @@ function renderNews(
                     "article"
                 );
 
+
             card.className =
                 "news-card";
 
-            card.tabIndex = 0;
+            card.tabIndex =
+                0;
 
             card.setAttribute(
                 "role",
@@ -403,6 +645,7 @@ function renderNews(
                     news.title
                 );
 
+
             textArea.appendChild(
                 title
             );
@@ -412,6 +655,7 @@ function renderNews(
                 safeText(
                     news.description
                 );
+
 
             if (descriptionText) {
 
@@ -425,6 +669,7 @@ function renderNews(
 
                 description.textContent =
                     descriptionText;
+
 
                 textArea.appendChild(
                     description
@@ -442,6 +687,7 @@ function renderNews(
                     news,
                     "news-image"
                 );
+
 
             if (image) {
 
@@ -501,16 +747,19 @@ function renderNews(
                 time
             );
 
+
             card.appendChild(
                 meta
             );
 
 
-            const openNews = () => {
-                showDetails(
-                    news
-                );
-            };
+            const openNews =
+                () => {
+
+                    showDetails(
+                        news
+                    );
+                };
 
 
             card.addEventListener(
@@ -544,14 +793,27 @@ function renderNews(
 }
 
 
-async function loadNews() {
+/* =========================================================
+   تحميل الأخبار
+   ========================================================= */
 
-    if (loadingMessage) {
+async function loadNews(
+    manualRefresh = false
+) {
+
+    if (manualRefresh) {
+
+        setRefreshLoading(
+            true
+        );
+
+    } else if (loadingMessage) {
 
         loadingMessage.classList.remove(
             "hidden"
         );
     }
+
 
     if (errorMessage) {
 
@@ -562,6 +824,11 @@ async function loadNews() {
 
 
     try {
+
+        /*
+           Date.now يمنع المتصفح من إعادة نسخة قديمة
+           من news.json.
+        */
 
         const response =
             await fetch(
@@ -589,6 +856,20 @@ async function loadNews() {
         );
 
 
+        /*
+           إذا ضغط المستخدم تحديث،
+           نعيده إلى أعلى قائمة الأخبار.
+        */
+
+        if (manualRefresh) {
+
+            window.scrollTo({
+                top: 0,
+                behavior: "smooth"
+            });
+        }
+
+
     } catch (error) {
 
         console.error(
@@ -600,11 +881,12 @@ async function loadNews() {
         if (errorMessage) {
 
             errorMessage.textContent =
-                "تعذر تحميل الأخبار. تحقق من الاتصال بالإنترنت ثم حاول مرة أخرى.";
+                "تعذر تحديث الأخبار. تحقق من الاتصال بالإنترنت ثم حاول مرة أخرى.";
 
             errorMessage.classList.remove(
                 "hidden"
             );
+
 
         } else if (newsList) {
 
@@ -621,15 +903,25 @@ async function loadNews() {
                 "hidden"
             );
         }
+
+
+        setRefreshLoading(
+            false
+        );
     }
 }
 
+
+/* =========================================================
+   العودة للرئيسية
+   ========================================================= */
 
 function goHome() {
 
     setHomeVisible(
         true
     );
+
 
     if (
         location.hash === "#news"
@@ -642,6 +934,7 @@ function goHome() {
             + location.search
         );
     }
+
 
     window.scrollTo({
         top: 0,
@@ -659,6 +952,10 @@ if (homeButton) {
 }
 
 
+/* =========================================================
+   زر الرجوع في الهاتف
+   ========================================================= */
+
 window.addEventListener(
     "popstate",
     () => {
@@ -675,9 +972,15 @@ window.addEventListener(
 );
 
 
+/* =========================================================
+   تشغيل التطبيق
+   ========================================================= */
+
 document.addEventListener(
     "DOMContentLoaded",
     () => {
+
+        createRefreshButton();
 
         setHomeVisible(
             true
@@ -687,6 +990,10 @@ document.addEventListener(
     }
 );
 
+
+/* =========================================================
+   Service Worker
+   ========================================================= */
 
 if (
     "serviceWorker"
