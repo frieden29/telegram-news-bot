@@ -1,5 +1,5 @@
 const CACHE_NAME =
-    "syria-news-v2";
+    "syria-news-v3";
 
 const APP_FILES = [
     "./",
@@ -22,26 +22,24 @@ self.addEventListener(
 
             caches
                 .open(CACHE_NAME)
-                .then(cache => {
+                .then(
+                    cache => {
 
-                    return cache.addAll(
-                        APP_FILES
-                    );
-                })
+                        return cache.addAll(
+                            APP_FILES
+                        );
+                    }
+                )
         );
 
-        /*
-         * تفعيل النسخة الجديدة فوراً
-         * دون انتظار إغلاق التطبيق.
-         */
+
         self.skipWaiting();
     }
 );
 
 
 /* =========================================================
-   تفعيل Service Worker الجديد
-   وحذف الكاش القديم
+   التفعيل وحذف الكاش القديم
    ========================================================= */
 
 self.addEventListener(
@@ -54,23 +52,28 @@ self.addEventListener(
 
                 caches
                     .keys()
-                    .then(keys => {
+                    .then(
+                        keys => {
 
-                        return Promise.all(
+                            return Promise.all(
 
-                            keys
-                                .filter(
-                                    key =>
-                                        key !== CACHE_NAME
-                                )
-                                .map(
-                                    key =>
-                                        caches.delete(key)
-                                )
-                        );
-                    }),
+                                keys
+                                    .filter(
+                                        key =>
+                                            key !== CACHE_NAME
+                                    )
+                                    .map(
+                                        key =>
+                                            caches.delete(
+                                                key
+                                            )
+                                    )
+                            );
+                        }
+                    ),
 
                 self.clients.claim()
+
             ])
         );
     }
@@ -88,15 +91,26 @@ self.addEventListener(
         const request =
             event.request;
 
+
+        if (
+            request.method
+            !== "GET"
+        ) {
+            return;
+        }
+
+
         const url =
-            new URL(request.url);
+            new URL(
+                request.url
+            );
 
 
         /*
          * news.json:
-         * دائماً من الإنترنت
-         * ولا نستخدم نسخة قديمة.
+         * دائماً من الإنترنت.
          */
+
         if (
             url.pathname.endsWith(
                 "/news.json"
@@ -118,15 +132,15 @@ self.addEventListener(
 
 
         /*
-         * app.js و style.css و index.html:
-         * نحاول الإنترنت أولاً.
+         * app.js
+         * style.css
+         * index.html
+         * الصفحة الرئيسية
          *
-         * إذا نجح:
-         * نحفظ النسخة الجديدة في الكاش.
-         *
-         * إذا فشل الإنترنت:
-         * نستخدم النسخة المخزنة.
+         * الإنترنت أولاً.
+         * وإذا لم يتوفر الإنترنت نستخدم الكاش.
          */
+
         if (
             url.pathname.endsWith(
                 "/app.js"
@@ -151,29 +165,46 @@ self.addEventListener(
                         cache: "no-store"
                     }
                 )
-                    .then(response => {
+                    .then(
+                        response => {
 
-                        const responseCopy =
-                            response.clone();
+                            if (
+                                response
+                                &&
+                                response.ok
+                            ) {
 
-                        caches
-                            .open(CACHE_NAME)
-                            .then(cache => {
+                                const responseCopy =
+                                    response.clone();
 
-                                cache.put(
-                                    request,
-                                    responseCopy
-                                );
-                            });
 
-                        return response;
-                    })
-                    .catch(() => {
+                                caches
+                                    .open(
+                                        CACHE_NAME
+                                    )
+                                    .then(
+                                        cache => {
 
-                        return caches.match(
-                            request
-                        );
-                    })
+                                            cache.put(
+                                                request,
+                                                responseCopy
+                                            );
+                                        }
+                                    );
+                            }
+
+
+                            return response;
+                        }
+                    )
+                    .catch(
+                        () => {
+
+                            return caches.match(
+                                request
+                            );
+                        }
+                    )
             );
 
             return;
@@ -182,21 +213,65 @@ self.addEventListener(
 
         /*
          * باقي الملفات:
-         * نستخدم الكاش أولاً،
-         * ثم الإنترنت عند الحاجة.
+         * الكاش أولاً،
+         * ثم الإنترنت.
          */
+
         event.respondWith(
 
             caches
-                .match(request)
-                .then(response => {
+                .match(
+                    request
+                )
+                .then(
+                    cachedResponse => {
 
-                    return (
-                        response
-                        ||
-                        fetch(request)
-                    );
-                })
+                        if (
+                            cachedResponse
+                        ) {
+                            return cachedResponse;
+                        }
+
+
+                        return fetch(
+                            request
+                        )
+                            .then(
+                                response => {
+
+                                    if (
+                                        !response
+                                        ||
+                                        !response.ok
+                                    ) {
+                                        return response;
+                                    }
+
+
+                                    const responseCopy =
+                                        response.clone();
+
+
+                                    caches
+                                        .open(
+                                            CACHE_NAME
+                                        )
+                                        .then(
+                                            cache => {
+
+                                                cache.put(
+                                                    request,
+                                                    responseCopy
+                                                );
+                                            }
+                                        );
+
+
+                                    return response;
+                                }
+                            );
+                    }
+                )
         );
     }
 );
