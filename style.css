@@ -6,6 +6,7 @@ html,
 body {
     margin: 0;
     padding: 0;
+
     background: #ffffff;
     color: #171717;
 
@@ -25,12 +26,19 @@ body {
 #app {
     width: 100%;
     max-width: 760px;
+
     margin: 0 auto;
+
     padding:
         env(safe-area-inset-top)
         16px
         env(safe-area-inset-bottom);
 }
+
+
+/* =========================================================
+   رأس الصفحة
+   ========================================================= */
 
 .header {
     padding: 22px 0 16px;
@@ -38,20 +46,114 @@ body {
 
 .header h1 {
     margin: 0;
+
     font-size: 32px;
+
     font-weight: 800;
 }
 
 .header p {
     margin: 4px 0 0;
+
     font-size: 16px;
+
     color: #666666;
 }
 
+
+/* =========================================================
+   زر تحديث الأخبار
+   ========================================================= */
+
+.header-actions {
+    margin-top: 16px;
+
+    display: flex;
+
+    justify-content: flex-start;
+}
+
+.refresh-button {
+    display: inline-flex;
+
+    align-items: center;
+
+    justify-content: center;
+
+    gap: 7px;
+
+    border: none;
+
+    border-radius: 13px;
+
+    padding: 10px 16px;
+
+    background: #222222;
+
+    color: #ffffff;
+
+    font-size: 15px;
+
+    font-weight: 700;
+
+    font-family: inherit;
+
+    cursor: pointer;
+
+    box-shadow:
+        0 2px 6px
+        rgba(0, 0, 0, 0.12);
+}
+
+.refresh-button:active {
+    transform: scale(0.98);
+}
+
+.refresh-button:disabled {
+    opacity: 0.65;
+
+    cursor: default;
+}
+
+.refresh-icon {
+    display: inline-block;
+
+    font-size: 20px;
+
+    line-height: 1;
+}
+
+.rotating {
+    animation:
+        refresh-spin
+        0.8s
+        linear
+        infinite;
+}
+
+@keyframes refresh-spin {
+
+    from {
+        transform: rotate(0deg);
+    }
+
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+
+/* =========================================================
+   قائمة الأخبار
+   ========================================================= */
+
 #newsList {
     display: flex;
+
     flex-direction: column;
+
     gap: 14px;
+
     padding-bottom: 30px;
 }
 
@@ -62,7 +164,9 @@ body {
 
 .news-card {
     background: #f7f7f7;
+
     border-radius: 18px;
+
     padding: 18px;
 
     box-shadow:
@@ -81,26 +185,37 @@ body {
 }
 
 .news-card:focus-visible {
-    outline: 3px solid rgba(0, 0, 0, 0.18);
+    outline:
+        3px solid
+        rgba(0, 0, 0, 0.18);
+
     outline-offset: 2px;
 }
 
 
-/* العنوان والنص والصورة بجانب بعض */
+/* =========================================================
+   النص والصورة
+   ========================================================= */
+
 .news-main-row {
     display: flex;
+
     align-items: flex-start;
+
     gap: 14px;
+
     direction: rtl;
 }
 
 .news-text-area {
     flex: 1;
+
     min-width: 0;
 }
 
 .news-image {
     width: 126px;
+
     height: 92px;
 
     flex:
@@ -116,6 +231,11 @@ body {
     display: block;
 }
 
+
+/* =========================================================
+   عنوان الخبر
+   ========================================================= */
+
 .news-title {
     margin: 0;
 
@@ -128,6 +248,11 @@ body {
     overflow-wrap: anywhere;
 }
 
+
+/* =========================================================
+   وصف الخبر
+   ========================================================= */
+
 .news-description {
     margin: 10px 0 0;
 
@@ -138,11 +263,18 @@ body {
     color: #555555;
 
     display: -webkit-box;
+
     -webkit-line-clamp: 3;
+
     -webkit-box-orient: vertical;
 
     overflow: hidden;
 }
+
+
+/* =========================================================
+   المصدر والوقت
+   ========================================================= */
 
 .news-meta {
     margin-top: 16px;
@@ -150,6 +282,7 @@ body {
     display: flex;
 
     justify-content: space-between;
+
     align-items: center;
 
     gap: 12px;
@@ -171,9 +304,16 @@ body {
     unicode-bidi: isolate;
 }
 
+
+/* =========================================================
+   الرسائل
+   ========================================================= */
+
 .message {
     padding: 40px 10px;
+
     text-align: center;
+
     font-size: 17px;
 }
 
@@ -220,6 +360,7 @@ body {
     display: block;
 
     width: 100%;
+
     max-height: 420px;
 
     object-fit: cover;
@@ -247,6 +388,7 @@ body {
     display: flex;
 
     justify-content: space-between;
+
     align-items: center;
 
     gap: 15px;
@@ -258,7 +400,9 @@ body {
 
 #detailsTime {
     direction: ltr;
+
     unicode-bidi: isolate;
+
     white-space: nowrap;
 }
 
@@ -301,6 +445,7 @@ body {
 
     #app {
         padding-left: 12px;
+
         padding-right: 12px;
     }
 
@@ -312,8 +457,19 @@ body {
         font-size: 29px;
     }
 
+    .header-actions {
+        margin-top: 13px;
+    }
+
+    .refresh-button {
+        padding: 9px 14px;
+
+        font-size: 14px;
+    }
+
     .news-card {
         padding: 14px;
+
         border-radius: 16px;
     }
 
@@ -323,6 +479,7 @@ body {
 
     .news-image {
         width: 108px;
+
         height: 82px;
 
         flex-basis: 108px;
@@ -332,12 +489,15 @@ body {
 
     .news-title {
         font-size: 18px;
+
         line-height: 1.5;
     }
 
     .news-description {
         margin-top: 7px;
+
         font-size: 14px;
+
         line-height: 1.6;
 
         -webkit-line-clamp: 2;
@@ -345,7 +505,9 @@ body {
 
     .news-meta {
         margin-top: 13px;
+
         font-size: 12.5px;
+
         gap: 8px;
     }
 
@@ -359,11 +521,15 @@ body {
 }
 
 
-/* شاشة صغيرة جداً مثل بعض أجهزة iPhone القديمة */
+/* =========================================================
+   شاشات iPhone الصغيرة
+   ========================================================= */
+
 @media (max-width: 390px) {
 
     .news-image {
         width: 94px;
+
         height: 76px;
 
         flex-basis: 94px;
