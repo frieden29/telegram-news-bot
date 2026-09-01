@@ -1,0 +1,11 @@
+{
+  "name": "أخبار سوريا",
+  "short_name": "أخبار سوريا",
+  "description": "أخبار سوريا من مصادر متعددة",
+  "lang": "ar",
+  "dir": "rtl",
+  "start_url": "./",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#ffffff"
+}

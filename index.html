@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport"
+          content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+
+    <meta name="theme-color" content="#ffffff">
+
+    <title>أخبار سوريا</title>
+
+    <link rel="manifest" href="manifest.json">
+    <link rel="stylesheet" href="style.css">
+
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="default">
+    <meta name="apple-mobile-web-app-title" content="أخبار سوريا">
+</head>
+
+<body>
+
+<div id="app">
+
+    <section id="homeScreen">
+
+        <header class="header">
+            <h1>أخبار سوريا</h1>
+            <p>من مصادر متعددة</p>
+        </header>
+
+        <div id="loading" class="message">
+            جاري تحميل الأخبار...
+        </div>
+
+        <div id="error" class="message error hidden">
+            تعذر تحميل الأخبار.
+        </div>
+
+        <main id="newsList"></main>
+
+    </section>
+
+
+    <section id="detailsScreen" class="hidden">
+
+        <div class="details-top">
+
+            <button id="homeButton" class="home-button">
+                🏠 الرئيسية
+            </button>
+
+        </div>
+
+        <article class="details-card">
+
+            <h2 id="detailsTitle"></h2>
+
+            <div class="details-meta">
+
+                <span id="detailsSource"></span>
+
+                <span id="detailsTime"></span>
+
+            </div>
+
+            <p id="detailsDescription"></p>
+
+            <a
+                id="sourceButton"
+                class="source-button"
+                href="#"
+                target="_blank"
+                rel="noopener noreferrer"
+            >
+                قراءة الخبر من المصدر
+            </a>
+
+        </article>
+
+    </section>
+
+</div>
+
+<script src="app.js"></script>
+
+</body>
+</html>
