@@ -55,11 +55,14 @@ body {
     padding-bottom: 30px;
 }
 
+
+/* =========================================================
+   بطاقة الخبر
+   ========================================================= */
+
 .news-card {
     background: #f7f7f7;
-
     border-radius: 18px;
-
     padding: 18px;
 
     box-shadow:
@@ -67,10 +70,50 @@ body {
         rgba(0, 0, 0, 0.08);
 
     cursor: pointer;
+
+    transition:
+        transform 0.12s ease,
+        box-shadow 0.12s ease;
 }
 
 .news-card:active {
     transform: scale(0.99);
+}
+
+.news-card:focus-visible {
+    outline: 3px solid rgba(0, 0, 0, 0.18);
+    outline-offset: 2px;
+}
+
+
+/* العنوان والنص والصورة بجانب بعض */
+.news-main-row {
+    display: flex;
+    align-items: flex-start;
+    gap: 14px;
+    direction: rtl;
+}
+
+.news-text-area {
+    flex: 1;
+    min-width: 0;
+}
+
+.news-image {
+    width: 126px;
+    height: 92px;
+
+    flex:
+        0 0
+        126px;
+
+    object-fit: cover;
+
+    border-radius: 14px;
+
+    background: #e8e8e8;
+
+    display: block;
 }
 
 .news-title {
@@ -81,6 +124,8 @@ body {
     line-height: 1.55;
 
     font-weight: 800;
+
+    overflow-wrap: anywhere;
 }
 
 .news-description {
@@ -91,6 +136,12 @@ body {
     line-height: 1.7;
 
     color: #555555;
+
+    display: -webkit-box;
+    -webkit-line-clamp: 3;
+    -webkit-box-orient: vertical;
+
+    overflow: hidden;
 }
 
 .news-meta {
@@ -99,6 +150,7 @@ body {
     display: flex;
 
     justify-content: space-between;
+    align-items: center;
 
     gap: 12px;
 
@@ -111,6 +163,12 @@ body {
 
 .news-time {
     color: #777777;
+
+    white-space: nowrap;
+
+    direction: ltr;
+
+    unicode-bidi: isolate;
 }
 
 .message {
@@ -128,7 +186,9 @@ body {
 }
 
 
-/* صفحة التفاصيل */
+/* =========================================================
+   صفحة التفاصيل
+   ========================================================= */
 
 #detailsScreen {
     padding-top: 16px;
@@ -156,6 +216,21 @@ body {
     padding: 8px 4px 30px;
 }
 
+.details-image {
+    display: block;
+
+    width: 100%;
+    max-height: 420px;
+
+    object-fit: cover;
+
+    margin: 0 0 22px;
+
+    border-radius: 18px;
+
+    background: #e8e8e8;
+}
+
 .details-card h2 {
     margin: 0;
 
@@ -172,12 +247,19 @@ body {
     display: flex;
 
     justify-content: space-between;
+    align-items: center;
 
     gap: 15px;
 
     color: #666666;
 
     font-size: 14px;
+}
+
+#detailsTime {
+    direction: ltr;
+    unicode-bidi: isolate;
+    white-space: nowrap;
 }
 
 #detailsDescription {
@@ -208,4 +290,90 @@ body {
     font-size: 17px;
 
     font-weight: 700;
+}
+
+
+/* =========================================================
+   الهاتف
+   ========================================================= */
+
+@media (max-width: 560px) {
+
+    #app {
+        padding-left: 12px;
+        padding-right: 12px;
+    }
+
+    .header {
+        padding-top: 18px;
+    }
+
+    .header h1 {
+        font-size: 29px;
+    }
+
+    .news-card {
+        padding: 14px;
+        border-radius: 16px;
+    }
+
+    .news-main-row {
+        gap: 11px;
+    }
+
+    .news-image {
+        width: 108px;
+        height: 82px;
+
+        flex-basis: 108px;
+
+        border-radius: 12px;
+    }
+
+    .news-title {
+        font-size: 18px;
+        line-height: 1.5;
+    }
+
+    .news-description {
+        margin-top: 7px;
+        font-size: 14px;
+        line-height: 1.6;
+
+        -webkit-line-clamp: 2;
+    }
+
+    .news-meta {
+        margin-top: 13px;
+        font-size: 12.5px;
+        gap: 8px;
+    }
+
+    .details-card h2 {
+        font-size: 25px;
+    }
+
+    #detailsDescription {
+        font-size: 17px;
+    }
+}
+
+
+/* شاشة صغيرة جداً مثل بعض أجهزة iPhone القديمة */
+@media (max-width: 390px) {
+
+    .news-image {
+        width: 94px;
+        height: 76px;
+
+        flex-basis: 94px;
+    }
+
+    .news-title {
+        font-size: 17px;
+    }
+
+    .news-meta {
+        flex-wrap: wrap;
+    }
 }
