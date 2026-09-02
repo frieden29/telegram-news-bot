@@ -2,9 +2,16 @@ const NEWS_URL = "./news.json";
 
 const STORAGE_KEY = "nabd-syria-news-cache-v2";
 
-const newsList = document.getElementById("newsList");
-const loadingMessage = document.getElementById("loadingMessage");
-const errorMessage = document.getElementById("errorMessage");
+const newsList =
+    document.getElementById("newsList");
+
+const loadingMessage =
+    document.getElementById("loadingMessage") ||
+    document.getElementById("loading");
+
+const errorMessage =
+    document.getElementById("errorMessage") ||
+    document.getElementById("error");
 
 const detailsScreen = document.getElementById("detailsScreen");
 const detailsTitle = document.getElementById("detailsTitle");
@@ -873,6 +880,171 @@ async function loadNews(
             );
         }
     }
+
+
+    /*
+     * إظهار رسالة التحميل فقط عندما لا توجد
+     * نسخة محفوظة سابقة.
+     */
+    if (
+        !savedNews &&
+        !manualRefresh &&
+        loadingMessage
+    ) {
+
+        loadingMessage.classList.remove(
+            "hidden"
+        );
+    }
+
+
+    if (manualRefresh) {
+
+        setRefreshLoading(
+            true
+        );
+    }
+
+
+    if (errorMessage) {
+
+        errorMessage.classList.add(
+            "hidden"
+        );
+    }
+
+
+    let timeout =
+        null;
+
+
+    try {
+
+        const controller =
+            new AbortController();
+
+
+        timeout =
+            setTimeout(
+                () => {
+
+                    controller.abort();
+
+                },
+                8000
+            );
+
+
+        const separator =
+            NEWS_URL.includes("?")
+            ? "&"
+            : "?";
+
+
+        const response =
+            await fetch(
+                NEWS_URL +
+                separator +
+                "t=" +
+                Date.now(),
+                {
+                    cache: "no-store",
+                    signal: controller.signal
+                }
+            );
+
+
+        if (!response.ok) {
+
+            throw new Error(
+                "HTTP " +
+                response.status
+            );
+        }
+
+
+        const data =
+            await response.json();
+
+
+        if (!Array.isArray(data)) {
+
+            throw new Error(
+                "news.json غير صالح"
+            );
+        }
+
+
+        renderNews(
+            data
+        );
+
+
+        try {
+
+            localStorage.setItem(
+                STORAGE_KEY,
+                JSON.stringify(data)
+            );
+
+        } catch (error) {
+
+            console.warn(
+                "تعذر حفظ الأخبار:",
+                error
+            );
+        }
+
+
+    } catch (error) {
+
+        console.warn(
+            "تعذر تحديث الأخبار:",
+            error
+        );
+
+
+        if (
+            !savedNews &&
+            errorMessage
+        ) {
+
+            errorMessage.textContent =
+                "تعذر تحميل الأخبار. حاول الضغط على تحديث الأخبار.";
+
+            errorMessage.classList.remove(
+                "hidden"
+            );
+        }
+
+
+    } finally {
+
+        if (timeout) {
+
+            clearTimeout(
+                timeout
+            );
+        }
+
+
+        /*
+         * إخفاء عبارة جاري تحميل الأخبار
+         * بعد انتهاء محاولة التحميل.
+         */
+        if (loadingMessage) {
+
+            loadingMessage.classList.add(
+                "hidden"
+            );
+        }
+
+
+        setRefreshLoading(
+            false
+        );
+    }
+}
 
 
     if (
