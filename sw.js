@@ -1,5 +1,5 @@
 const CACHE_NAME =
-    "nabd-syria-v4";
+    "nabd-syria-v5";
 
 const APP_FILES = [
     "./",
@@ -32,7 +32,9 @@ self.addEventListener(
                 )
         );
 
-
+        /*
+         * فعّل النسخة الجديدة مباشرة.
+         */
         self.skipWaiting();
     }
 );
@@ -102,11 +104,10 @@ self.addEventListener(
 
 
         /*
-         * الأخبار:
-         * الإنترنت دائماً.
+         * news.json
          *
-         * app.js سيحفظ آخر نسخة
-         * في localStorage.
+         * دائماً من الإنترنت.
+         * لا نستخدم نسخة مخزنة قديمة.
          */
 
         if (
@@ -130,8 +131,10 @@ self.addEventListener(
 
 
         /*
-         * ملفات التطبيق الرئيسية:
+         * ملفات التطبيق الأساسية:
+         *
          * الإنترنت أولاً.
+         * وإذا تعذر الاتصال نرجع للكاش.
          */
 
         if (
@@ -163,7 +166,8 @@ self.addEventListener(
 
                             if (
                                 response
-                                && response.ok
+                                &&
+                                response.ok
                             ) {
 
                                 const copy =
@@ -204,21 +208,61 @@ self.addEventListener(
 
 
         /*
-         * بقية الملفات.
+         * باقي الملفات:
+         * الكاش أولاً، ثم الإنترنت.
          */
 
         event.respondWith(
 
             caches
-                .match(request)
+                .match(
+                    request
+                )
                 .then(
                     cached => {
 
-                        return (
-                            cached
-                            ||
-                            fetch(request)
-                        );
+                        if (cached) {
+                            return cached;
+                        }
+
+
+                        return fetch(
+                            request
+                        )
+                            .then(
+                                response => {
+
+                                    if (
+                                        !response
+                                        ||
+                                        !response.ok
+                                    ) {
+                                        return response;
+                                    }
+
+
+                                    const copy =
+                                        response.clone();
+
+
+                                    caches
+                                        .open(
+                                            CACHE_NAME
+                                        )
+                                        .then(
+                                            cache => {
+
+                                                cache.put(
+                                                    request,
+                                                    copy
+                                                );
+                                            }
+                                        );
+
+
+                                    return response;
+                                }
+                            );
                     }
                 )
         );
