@@ -64,6 +64,51 @@ function safeText(value) {
 
 function getNewsTime(news) {
 
+    /*
+     * الأولوية لوقت دخول الخبر إلى نبض سوريا
+     * وهو الأقرب إلى وقت نشره على Telegram.
+     */
+    const publishedAt =
+        Number(news.published_at || 0);
+
+    if (
+        Number.isFinite(publishedAt)
+        && publishedAt > 0
+    ) {
+
+        try {
+
+            return new Intl.DateTimeFormat(
+                "de-DE",
+                {
+                    timeZone: "Europe/Berlin",
+                    day: "2-digit",
+                    month: "2-digit",
+                    year: "numeric",
+                    hour: "2-digit",
+                    minute: "2-digit",
+                    hour12: false
+                }
+            ).format(
+                new Date(
+                    publishedAt * 1000
+                )
+            );
+
+        } catch (error) {
+
+            console.warn(
+                "تعذر تحويل وقت النشر:",
+                error
+            );
+        }
+    }
+
+
+    /*
+     * احتياطي فقط للأخبار القديمة
+     * التي لا تحتوي published_at.
+     */
     const timestamp =
         Number(news.timestamp || 0);
 
@@ -86,18 +131,24 @@ function getNewsTime(news) {
                     hour12: false
                 }
             ).format(
-                new Date(timestamp * 1000)
+                new Date(
+                    timestamp * 1000
+                )
             );
 
         } catch (error) {
 
             console.warn(
-                "خطأ في تحويل الوقت:",
+                "تعذر تحويل وقت المصدر:",
                 error
             );
         }
     }
 
+
+    return "التاريخ غير متوفر";
+}
+    
 
     const oldTime =
         safeText(news.time);
