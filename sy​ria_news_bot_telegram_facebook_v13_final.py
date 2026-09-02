@@ -1,0 +1,2943 @@
+import os
+import re
+import json
+import time
+import html
+import requests
+import urllib.parse
+import urllib.request
+
+from bs4 import BeautifulSoup
+from difflib import SequenceMatcher
+from deep_translator import GoogleTranslator
+from email.utils import parsedate_to_datetime
+from datetime import datetime, timezone
+from zoneinfo import ZoneInfo
+from dotenv import load_dotenv
+
+
+load_dotenv()
+
+
+# =========================================================
+# ترجمة الخبر المختار فقط
+# =========================================================
+
+def prepare_story_for_publishing(story):
+
+    # إذا كان الرابط من Google News، نحاول فك رابط الخبر المختار فقط.
+    if not story.get(
+        "direct_link",
+        True
+    ):
+
+        original_link = story.get(
+            "link",
+            ""
+        )
+
+        resolved_link, direct_link = resolve_google_news_link(
+            original_link
+        )
+
+        story["link"] = resolved_link
+        story["direct_link"] = direct_link
+
+        if direct_link:
+            print(
+                "🔗 تم الوصول إلى رابط المصدر الأصلي."
+            )
+        else:
+            print(
+                "⚠️ تعذر الوصول إلى الرابط الأصلي، سيتم استخدام Google News."
+            )
+
+
+    if not story.get(
+        "image"
+    ):
+
+        story["image"] = extract_page_image(
+            story.get(
+                "link",
+                ""
+            )
+        )
+
+
+    if story.get(
+        "language",
+        "ar"
+    ) == "ar":
+
+        return story
+
+
+    original_title = clean_text(
+        story.get(
+            "original_title",
+            story.get("title", "")
+        )
+    )
+
+    print(
+        "🌐 ترجمة الخبر المختار فقط:"
+    )
+    print(
+        original_title
+    )
+
+
+    translated_title = translate_to_arabic(
+        original_title
+    )
+
+
+    if not translated_title:
+
+        print(
+            "⚠️ تعذر ترجمة الخبر المختار، لن يتم نشره."
+        )
+
+        return None
+
+
+    story["title"] = translated_title
+
+
+    summary = clean_text(
+        story.get(
+            "summary",
+            ""
+        )
+    )
+
+
+    if summary:
+
+        translated_summary = translate_to_arabic(
+            summary
+        )
+
+        if translated_summary:
+            story["summary"] = translated_summary
+        else:
+            # فشل ترجمة المختصر لا يمنع نشر الخبر؛
+            # ننشر العنوان المترجم والرابط فقط.
+            story["summary"] = ""
+
+
+    return story
+
+
+# =========================================================
+# Telegram
+# =========================================================
+
+TELEGRAM_TOKEN = os.environ.get("TELEGRAM_TOKEN")
+TELEGRAM_CHANNEL = os.environ.get("TELEGRAM_CHANNEL")
+
+if not TELEGRAM_TOKEN:
+    raise ValueError("TELEGRAM_TOKEN غير موجود")
+
+if not TELEGRAM_CHANNEL:
+    raise ValueError("TELEGRAM_CHANNEL غير موجود")
+
+
+
+# =========================================================
+# Facebook
+# =========================================================
+
+FACEBOOK_PAGE_ID = os.environ.get("FACEBOOK_PAGE_ID")
+FACEBOOK_PAGE_TOKEN = os.environ.get("FACEBOOK_PAGE_TOKEN")
+
+if not FACEBOOK_PAGE_ID:
+    raise ValueError("FACEBOOK_PAGE_ID غير موجود")
+
+if not FACEBOOK_PAGE_TOKEN:
+    raise ValueError("FACEBOOK_PAGE_TOKEN غير موجود")
+
+FACEBOOK_API_VERSION = "v26.0"
+
+
+# =========================================================
+# إعدادات عامة
+# =========================================================
+
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+
+PUBLISHED_FILE = os.path.join(
+    BASE_DIR,
+    "published_telegram_news.json"
+)
+
+
+NEWS_FILE = os.path.join(
+    BASE_DIR,
+    "news.json"
+)
+
+MAX_APP_NEWS = 200
+BERLIN_TZ = ZoneInfo("Europe/Berlin")
+
+MAX_PUBLISHED_RECORDS = 3000
+
+# عدد الأخبار التي نفحصها من كل مصدر
+MAX_ITEMS_PER_SOURCE = 100
+
+# أقصى عدد أخبار ينشرها البوت في تشغيل واحد
+MAX_POSTS_PER_RUN = 10
+
+REQUEST_TIMEOUT = 30
+MAX_NEWS_AGE_DAYS = 7
+TRANSLATION_RETRIES = 2
+
+
+# =========================================================
+# كلمات تدل على ارتباط الخبر بسوريا
+# =========================================================
+
+SYRIA_KEYWORDS_AR = [
+    "سوريا",
+    "سورية",
+    "سوري",
+    "سوريون",
+    "سوريين",
+    "السوري",
+    "السورية",
+    "السوريون",
+    "السوريين",
+    "دمشق",
+    "حلب",
+    "إدلب",
+    "ادلب",
+    "حمص",
+    "حماة",
+    "درعا",
+    "السويداء",
+    "اللاذقية",
+    "طرطوس",
+    "دير الزور",
+    "الرقة",
+    "الحسكة",
+    "القنيطرة",
+    "الجولان",
+    "بشار الأسد",
+    "بشار الاسد",
+    "قسد"
+]
+
+SYRIA_KEYWORDS_EN = [
+    "syria",
+    "syrian",
+    "damascus",
+    "aleppo",
+    "idlib",
+    "homs",
+    "hama",
+    "daraa",
+    "sweida",
+    "suwayda",
+    "latakia",
+    "tartus",
+    "deir ez-zor",
+    "deir al-zor",
+    "raqqa",
+    "hasakah",
+    "golan heights",
+    "syrian golan",
+    "occupied golan",
+    "bashar assad",
+    "bashar al-assad",
+    "sdf"
+]
+
+
+# =========================================================
+# المصادر العربية ذات RSS مباشر
+#
+# الرابط الذي يصل Telegram سيكون رابط المقال الأصلي
+# وليس Google News.
+# =========================================================
+
+ARABIC_RSS_SOURCES = [
+
+    {
+        "name": "BBC News عربي",
+        "rss": "https://feeds.bbci.co.uk/arabic/rss.xml",
+        "icon": "🌍",
+        "language": "ar"
+    },
+
+    {
+        "name": "Sky News Arabia",
+        "rss": "https://www.skynewsarabia.com/rss",
+        "icon": "🟥",
+        "language": "ar"
+    },
+
+    {
+        "name": "الجزيرة",
+        "rss": "https://www.aljazeera.net/aljazeerarss/alarabic.xml",
+        "icon": "🟠",
+        "language": "ar"
+    },
+
+    {
+        "name": "سانا",
+        "rss": "https://sana.sy/?feed=rss2",
+        "icon": "🟦",
+        "language": "ar"
+    },
+
+    {
+        "name": "الإخبارية السورية",
+        "rss": "https://alikhbariah.com/feed/",
+        "domain": "alikhbariah.com",
+        "icon": "🇸🇾",
+        "language": "ar",
+        "google_fallback": True
+    },
+
+    {
+        "name": "حلب اليوم",
+        "rss": "https://halabtodaytv.net/feed/",
+        "icon": "🟨",
+        "language": "ar"
+    },
+
+    {
+        "name": "تلفزيون سوريا",
+        "rss": "https://www.syria.tv/rss",
+        "icon": "🔵",
+        "language": "ar"
+    },
+
+    {
+        "name": "DW عربية",
+        "rss": "https://rss.dw.com/xml/rss-ar-all",
+        "icon": "🇩🇪",
+        "language": "ar"
+    },
+
+    {
+        "name": "France 24 عربي",
+        "rss": "https://www.france24.com/ar/rss",
+        "icon": "🇫🇷",
+        "language": "ar"
+    },
+
+    {
+        "name": "Euronews عربي",
+        "rss": "https://arabic.euronews.com/rss?level=vertical&name=news",
+        "domain": "arabic.euronews.com",
+        "icon": "🇪🇺",
+        "language": "ar",
+        "google_fallback": True
+    }
+]
+
+
+# =========================================================
+# المصادر الأجنبية ذات RSS مباشر
+#
+# العنوان يترجم للعربية،
+# لكن رابط "مصدر الخبر" يفتح المقال الأصلي.
+# =========================================================
+
+GLOBAL_RSS_SOURCES = [
+
+    {
+        "name": "The Jerusalem Post",
+        "rss": "https://www.jpost.com/rss/rssfeedsfrontpage.aspx",
+        "icon": "🇮🇱",
+        "language": "en"
+    },
+
+    {
+        "name": "يديعوت أحرونوت - Ynet",
+        "rss": "https://www.ynetnews.com/Integration/StoryRss3082.xml",
+        "icon": "🇮🇱",
+        "language": "en"
+    },
+
+    {
+        "name": "CGTN",
+        "rss": "https://www.cgtn.com/subscribe/rss/section/world.xml",
+        "icon": "🇨🇳",
+        "language": "en"
+    },
+
+    {
+        "name": "China Daily",
+        "rss": "https://www.chinadaily.com.cn/rss/world_rss.xml",
+        "icon": "🇨🇳",
+        "language": "en"
+    },
+
+    {
+        "name": "Times of India",
+        "rss": "https://timesofindia.indiatimes.com/rssfeedstopstories.cms",
+        "icon": "🇮🇳",
+        "language": "en"
+    },
+
+    {
+        "name": "BBC News",
+        "rss": "https://feeds.bbci.co.uk/news/world/rss.xml",
+        "icon": "🇬🇧",
+        "language": "en"
+    },
+
+    # سنجرب RSS المباشر أولاً.
+    # إذا فشل، ينتقل البوت تلقائياً إلى Google News.
+    {
+        "name": "DW",
+        "rss": "https://rss.dw.com/xml/rss-en-world",
+        "domain": "dw.com",
+        "icon": "🇩🇪",
+        "language": "en",
+        "google_fallback": True
+    },
+
+    {
+        "name": "France 24",
+        "rss": "https://www.france24.com/en/rss",
+        "domain": "france24.com",
+        "icon": "🇫🇷",
+        "language": "en",
+        "google_fallback": True
+    },
+
+    {
+        "name": "ARD Tagesschau",
+        "rss": "https://www.tagesschau.de/infoservices/alle-meldungen-100~rss2.xml",
+        "domain": "tagesschau.de",
+        "icon": "🇩🇪",
+        "language": "de",
+        "google_fallback": True
+    },
+
+    {
+        "name": "ORF News",
+        "rss": "https://rss.orf.at/news.xml",
+        "domain": "orf.at",
+        "icon": "🇦🇹",
+        "language": "de",
+        "google_fallback": True
+    },
+
+    {
+        "name": "CNA - Channel NewsAsia",
+        "rss": "https://www.channelnewsasia.com/api/v1/rss-outbound-feed?_format=xml&category=6311",
+        "domain": "channelnewsasia.com",
+        "icon": "🇸🇬",
+        "language": "en",
+        "google_fallback": True
+    }
+]
+
+
+# =========================================================
+# مصادر Google News الاحتياطية
+#
+# هذه المصادر لم نجد لها RSS مباشر صالحاً أثناء الاختبار.
+# =========================================================
+
+GOOGLE_ONLY_SOURCES = [
+
+    {
+        "name": "العربية",
+        "domain": "alarabiya.net",
+        "icon": "🔴",
+        "language": "ar"
+    },
+
+    {
+        "name": "The Times of Israel",
+        "domain": "timesofisrael.com",
+        "icon": "🇮🇱",
+        "language": "en"
+    },
+
+    {
+        "name": "Associated Press",
+        "domain": "apnews.com",
+        "icon": "🇺🇸",
+        "language": "en"
+    },
+
+    {
+        "name": "The New York Times",
+        "domain": "nytimes.com",
+        "icon": "🇺🇸",
+        "language": "en"
+    },
+
+    {
+        "name": "SRF News",
+        "domain": "srf.ch",
+        "icon": "🇨🇭",
+        "language": "de"
+    },
+
+    {
+        "name": "Xinhua",
+        "domain": "news.cn",
+        "icon": "🇨🇳",
+        "language": "en"
+    },
+
+    {
+        "name": "TASS",
+        "domain": "tass.com",
+        "icon": "🇷🇺",
+        "language": "en"
+    },
+
+    {
+        "name": "ABC News Australia",
+        "domain": "abc.net.au",
+        "icon": "🇦🇺",
+        "language": "en"
+    },
+
+    {
+        "name": "Anadolu Agency",
+        "domain": "aa.com.tr",
+        "icon": "🇹🇷",
+        "language": "en"
+    },
+
+    {
+        "name": "Dawn",
+        "domain": "dawn.com",
+        "icon": "🇵🇰",
+        "language": "en"
+    },
+
+    {
+        "name": "Arab News",
+        "domain": "arabnews.com",
+        "icon": "🇸🇦",
+        "language": "en"
+    },
+
+    {
+        "name": "The Hindu",
+        "domain": "thehindu.com",
+        "icon": "🇮🇳",
+        "language": "en"
+    },
+
+    {
+        "name": "NHK World-Japan",
+        "domain": "www3.nhk.or.jp",
+        "icon": "🇯🇵",
+        "language": "en"
+    },
+
+    {
+        "name": "Kompas",
+        "domain": "kompas.com",
+        "icon": "🇮🇩",
+        "language": "id"
+    },
+
+    {
+        "name": "The Star Malaysia",
+        "domain": "thestar.com.my",
+        "icon": "🇲🇾",
+        "language": "en"
+    },
+
+    {
+        "name": "Reuters",
+        "domain": "reuters.com",
+        "icon": "🌍",
+        "language": "en"
+    }
+]
+
+
+# =========================================================
+# HTTP Headers
+# =========================================================
+
+HEADERS = {
+    "User-Agent": (
+        "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
+        "AppleWebKit/537.36 (KHTML, like Gecko) "
+        "Chrome/124.0 Safari/537.36"
+    ),
+    "Accept-Language": "ar,en;q=0.8"
+}
+
+
+# =========================================================
+# كلمات عامة لا تساعد كثيراً في مقارنة الأخبار
+# =========================================================
+
+STOP_WORDS = {
+    "في", "من", "إلى", "الى", "على", "عن", "مع",
+    "بعد", "قبل", "بين", "هذا", "هذه", "ذلك",
+    "تلك", "هو", "هي", "أن", "ان", "ما",
+    "حول", "خلال", "وسط", "عبر", "قال", "قالت",
+    "يقول", "جديد", "جديدة", "آخر", "اخر",
+
+    "the", "a", "an", "of", "in", "on", "to",
+    "for", "and", "with", "after", "before",
+    "from", "says", "said"
+}
+
+
+
+
+# =========================================================
+# فلترة المحتوى غير الإخباري
+# =========================================================
+
+NON_NEWS_PHRASES = [
+    "دعوة لتقديم مقترحات",
+    "دعوة لتقديم عروض",
+    "طلب تقديم عروض",
+    "طلب عروض",
+    "إعلان وظيفة",
+    "فرصة عمل",
+    "فرص عمل",
+    "وظائف شاغرة",
+    "وظيفة شاغرة",
+    "منحة دراسية",
+    "منح دراسية",
+    "فرصة تدريب",
+    "فرص تدريب",
+    "دورة تدريبية",
+    "دورات تدريبية",
+    "مناقصة",
+    "مناقصات",
+    "مدرب",
+    "مدربين",
+    "المدربون",
+    "استشاري",
+    "استشارية",
+    "استشارة",
+    "call for proposals",
+    "call for applications",
+    "job vacancy",
+    "job vacancies",
+    "vacancy",
+    "scholarship",
+    "scholarships",
+    "training opportunity",
+    "trainer",
+    "trainers",
+    "consultant",
+    "consultancy",
+    "terms of reference",
+    "tor:",
+    "tender",
+    "tenders",
+    "archive",
+    "archives",
+    "topic page",
+    "topics",
+    "أرشيف",
+    "الأرشيف"
+]
+
+
+def is_non_news_content(text):
+
+    text = clean_text(text).lower()
+
+    if not text:
+        return False
+
+    for phrase in NON_NEWS_PHRASES:
+        if phrase.lower() in text:
+            return True
+
+    return False
+
+
+def is_non_article_link(link):
+
+    link = clean_text(link).lower()
+
+    if not link:
+        return False
+
+    blocked_parts = [
+        "/topic/",
+        "/topics/",
+        "/tag/",
+        "/tags/",
+        "/category/",
+        "/categories/",
+        "/archive/",
+        "/archives/"
+    ]
+
+    return any(part in link for part in blocked_parts)
+
+
+def is_probable_topic_title(title):
+
+    title = clean_title(title)
+
+    if not title:
+        return True
+
+    # صفحات الموضوعات في Google News تكون غالباً عناوين اسمية قصيرة جداً
+    # مثل "Aleppo airport" وليست جملة خبرية.
+    words = re.findall(
+        r"[\w\u0600-\u06FF'-]+",
+        title
+    )
+
+    if len(words) <= 3 and len(title) < 45:
+        return True
+
+    return False
+
+
+def is_suspicious_source_topic_title(source_name, title):
+
+    # Arab News يعيد أحياناً عبر Google News صفحات موضوعات قصيرة
+    # وليست مقالات إخبارية مستقلة.
+    if source_name != "Arab News":
+        return False
+
+    title = clean_title(title)
+
+    if not title:
+        return True
+
+    low = title.lower()
+
+    for suffix in [
+        " - arabnews.com",
+        " - arab news",
+    ]:
+        if low.endswith(suffix):
+            title = title[:-len(suffix)].strip()
+            break
+
+    words = re.findall(
+        r"[\w\u0600-\u06FF'-]+",
+        title
+    )
+
+    return len(words) <= 6 and len(title) < 65
+
+
+
+# =========================================================
+# صور الأخبار + ملف التطبيق news.json
+# =========================================================
+
+def normalize_image_url(url):
+
+    url = clean_text(url)
+
+    if not url:
+        return ""
+
+    if url.startswith("//"):
+        return "https:" + url
+
+    if url.startswith("http://") or url.startswith("https://"):
+        return url
+
+    return ""
+
+
+def extract_item_image(item):
+
+    # media:thumbnail / media:content / enclosure
+    for tag in item.find_all(True):
+
+        url = normalize_image_url(
+            tag.get("url", "")
+        )
+
+        if not url:
+            continue
+
+        tag_name = (tag.name or "").lower()
+        media_type = (tag.get("type", "") or "").lower()
+        medium = (tag.get("medium", "") or "").lower()
+
+        if (
+            "thumbnail" in tag_name
+            or "content" in tag_name
+            or tag_name == "enclosure"
+            or medium == "image"
+            or media_type.startswith("image/")
+        ):
+            return url
+
+    # صورة داخل description/content
+    for name in [
+        "description",
+        "summary",
+        "content",
+        "content:encoded"
+    ]:
+
+        tag = item.find(name)
+
+        if not tag:
+            continue
+
+        html_text = str(tag)
+
+        parsed = BeautifulSoup(
+            html_text,
+            "html.parser"
+        )
+
+        img = parsed.find("img")
+
+        if img:
+            url = normalize_image_url(
+                img.get("src", "")
+            )
+
+            if url:
+                return url
+
+    return ""
+
+
+def extract_page_image(link):
+
+    link = clean_text(link)
+
+    if (
+        not link
+        or "news.google.com" in link
+    ):
+        return ""
+
+    try:
+
+        response = requests.get(
+            link,
+            headers=HEADERS,
+            timeout=REQUEST_TIMEOUT,
+            allow_redirects=True
+        )
+
+        response.raise_for_status()
+
+        soup = BeautifulSoup(
+            response.text,
+            "html.parser"
+        )
+
+        selectors = [
+            ("meta", {"property": "og:image"}, "content"),
+            ("meta", {"name": "twitter:image"}, "content"),
+            ("meta", {"property": "twitter:image"}, "content"),
+            ("meta", {"itemprop": "image"}, "content")
+        ]
+
+        for tag_name, attrs, attr_name in selectors:
+
+            tag = soup.find(
+                tag_name,
+                attrs=attrs
+            )
+
+            if tag:
+                url = normalize_image_url(
+                    tag.get(attr_name, "")
+                )
+
+                if url:
+                    return url
+
+    except Exception as e:
+
+        print(
+            "⚠️ تعذر استخراج صورة صفحة الخبر:",
+            e
+        )
+
+    return ""
+
+
+def format_app_time(timestamp):
+
+    timestamp = int(timestamp or 0)
+
+    if timestamp <= 0:
+        timestamp = int(time.time())
+
+    dt = datetime.fromtimestamp(
+        timestamp,
+        timezone.utc
+    ).astimezone(
+        BERLIN_TZ
+    )
+
+    return dt.strftime(
+        "%d.%m.%Y, %H:%M"
+    )
+
+
+def is_archive_story(title, link=""):
+
+    text = (
+        clean_text(title)
+        + " "
+        + clean_text(link)
+    ).lower()
+
+    archive_terms = [
+        "archive",
+        "archives",
+        "أرشيف",
+        "الأرشيف"
+    ]
+
+    return any(
+        term in text
+        for term in archive_terms
+    )
+
+
+def load_app_news():
+
+    if not os.path.exists(
+        NEWS_FILE
+    ):
+        return []
+
+    try:
+
+        with open(
+            NEWS_FILE,
+            "r",
+            encoding="utf-8"
+        ) as file:
+
+            data = json.load(file)
+
+            if isinstance(data, list):
+                return data
+
+    except Exception as e:
+
+        print(
+            "⚠️ تعذر قراءة news.json:",
+            e
+        )
+
+    return []
+
+
+def save_story_for_app(story):
+
+    title = clean_title(
+        story.get("title", "")
+    )
+
+    link = clean_link(
+        story.get("link", "")
+    )
+
+    if (
+        not title
+        or not link
+        or is_archive_story(title, link)
+    ):
+        print(
+            "🚫 لم يُحفظ الخبر في التطبيق لأنه أرشيف/غير صالح."
+        )
+        return
+
+    source_name = clean_text(
+        story.get("source", "")
+    )
+
+    description = clean_text(
+        story.get("summary", "")
+    )
+
+    image = normalize_image_url(
+        story.get("image", "")
+    )
+
+    if not image:
+        image = extract_page_image(
+            link
+        )
+
+    source_timestamp = int(
+        story.get("timestamp", 0)
+        or 0
+    )
+
+    # هذا هو وقت دخول الخبر فعلياً إلى نبض سوريا.
+    published_at = int(
+        time.time()
+    )
+
+    new_item = {
+        "title": title,
+        "description": description,
+        "source": source_name,
+        "category": "سوريا",
+        "time": format_app_time(published_at),
+        "timestamp": source_timestamp,
+        "published_at": published_at,
+        "image": image,
+        "url": link
+    }
+
+    current = load_app_news()
+
+    cleaned = []
+    seen_links = set()
+    seen_titles = []
+
+    # الخبر الجديد أولاً.
+    for item in [new_item] + current:
+
+        if not isinstance(item, dict):
+            continue
+
+        item_title = clean_title(
+            item.get("title", "")
+        )
+
+        item_link = clean_link(
+            item.get("url", "")
+        )
+
+        if (
+            not item_title
+            or is_archive_story(
+                item_title,
+                item_link
+            )
+        ):
+            continue
+
+        if (
+            item_link
+            and item_link in seen_links
+        ):
+            continue
+
+        duplicate_title = False
+
+        for old_title in seen_titles:
+
+            if title_similarity(
+                item_title,
+                old_title
+            ) >= 0.90:
+
+                duplicate_title = True
+                break
+
+        if duplicate_title:
+            continue
+
+        if item_link:
+            seen_links.add(
+                item_link
+            )
+
+        seen_titles.append(
+            item_title
+        )
+
+        cleaned.append(
+            item
+        )
+
+        if len(cleaned) >= MAX_APP_NEWS:
+            break
+
+    with open(
+        NEWS_FILE,
+        "w",
+        encoding="utf-8"
+    ) as file:
+
+        json.dump(
+            cleaned,
+            file,
+            ensure_ascii=False,
+            indent=2
+        )
+
+    print(
+        "📱 تم تحديث news.json للتطبيق"
+    )
+
+    print(
+        "🕒 وقت دخول الخبر إلى نبض سوريا:",
+        new_item["time"]
+    )
+
+    if image:
+        print(
+            "🖼️ تم حفظ صورة الخبر للتطبيق"
+        )
+    else:
+        print(
+            "🖼️ لا توجد صورة متاحة لهذا الخبر"
+        )
+
+
+# =========================================================
+# كشف رسائل الخطأ الحقيقية القادمة من خدمة الترجمة
+# =========================================================
+
+TRANSLATION_ERROR_PHRASES = [
+    "error 500",
+    "server error",
+    "that's an error",
+    "that’s an error",
+    "please try again later",
+    "that's all we know",
+    "that’s all we know",
+    "there was an error"
+]
+
+
+def is_translation_error_text(text):
+
+    text = clean_text(text).lower()
+
+    if not text:
+        return False
+
+    for phrase in TRANSLATION_ERROR_PHRASES:
+        if phrase in text:
+            return True
+
+    return False
+
+
+# =========================================================
+# تنظيف النص
+# =========================================================
+
+def clean_text(text):
+
+    if not text:
+        return ""
+
+    text = html.unescape(text)
+
+    text = re.sub(
+        r"\s+",
+        " ",
+        text
+    )
+
+    return text.strip()
+
+
+def clean_title(title):
+
+    title = clean_text(title)
+
+    prefixes = [
+        r"^Read article:\s*",
+        r"^Read Article:\s*",
+        r"^READ ARTICLE:\s*",
+        r"^اقرأ المقال:\s*",
+        r"^شاهد:\s*"
+    ]
+
+    for pattern in prefixes:
+
+        title = re.sub(
+            pattern,
+            "",
+            title,
+            flags=re.IGNORECASE
+        )
+
+    return clean_text(title)
+
+
+def normalize_title(title):
+
+    title = clean_title(title).lower()
+
+    title = re.sub(
+        r"[^\w\u0600-\u06FF\s]",
+        " ",
+        title
+    )
+
+    title = re.sub(
+        r"\s+",
+        " ",
+        title
+    )
+
+    return title.strip()
+
+
+def has_arabic(text):
+
+    return bool(
+        re.search(
+            r"[\u0600-\u06FF]",
+            text or ""
+        )
+    )
+
+
+def clean_link(link):
+
+    if not link:
+        return ""
+
+    link = clean_text(link)
+
+    # إزالة tracking من BBC وبعض المصادر
+    if "?" in link:
+
+        base, query = link.split(
+            "?",
+            1
+        )
+
+        # Google News يحتاج query الخاص به أحياناً،
+        # أما روابط الأخبار الأصلية فنزيل tracking منها.
+        if "news.google.com" not in base:
+            link = base
+
+    return link.strip()
+
+
+# =========================================================
+# هل الخبر متعلق بسوريا؟
+# =========================================================
+
+def is_syria_news(text):
+
+    text = clean_text(text).lower()
+
+    if not text:
+        return False
+
+    for keyword in SYRIA_KEYWORDS_AR:
+
+        if keyword.lower() in text:
+            return True
+
+    for keyword in SYRIA_KEYWORDS_EN:
+
+        pattern = (
+            r"(?<![a-z])"
+            + re.escape(keyword.lower())
+            + r"(?![a-z])"
+        )
+
+        if re.search(pattern, text):
+            return True
+
+    return False
+
+
+# =========================================================
+# مترجم احتياطي مباشر عبر HTTP
+# =========================================================
+
+def translate_with_mymemory_http(text):
+
+    text = clean_text(text)
+
+    if not text:
+        return ""
+
+    try:
+
+        response = requests.get(
+            "https://api.mymemory.translated.net/get",
+            params={
+                "q": text,
+                "langpair": "en|ar"
+            },
+            headers=HEADERS,
+            timeout=REQUEST_TIMEOUT
+        )
+
+        response.raise_for_status()
+
+        data = response.json()
+
+        translated = clean_text(
+            data.get(
+                "responseData",
+                {}
+            ).get(
+                "translatedText",
+                ""
+            )
+        )
+
+        if (
+            translated
+            and not is_translation_error_text(
+                translated
+            )
+        ):
+
+            print(
+                "🔄 تم استخدام الترجمة الاحتياطية عبر HTTP بنجاح"
+            )
+
+            return translated
+
+    except Exception as e:
+
+        print(
+            "⚠️ فشلت الترجمة الاحتياطية عبر HTTP:",
+            e
+        )
+
+    return ""
+
+
+# =========================================================
+# الترجمة إلى العربية
+# =========================================================
+
+def translate_to_arabic(text):
+
+    text = clean_text(text)
+
+    if not text:
+        return ""
+
+    if has_arabic(text):
+        return text
+
+    # المحاولة الأولى: Google Translator مع إعادة المحاولة
+    for attempt in range(1, TRANSLATION_RETRIES + 1):
+
+        try:
+
+            translated = GoogleTranslator(
+                source="auto",
+                target="ar"
+            ).translate(text)
+
+            translated = clean_text(
+                translated
+            )
+
+            if (
+                translated
+                and not is_translation_error_text(
+                    translated
+                )
+            ):
+                return translated
+
+            if translated:
+                print(
+                    f"⚠️ Google Translate أعاد رسالة خطأ - محاولة {attempt}"
+                )
+
+        except Exception as e:
+
+            print(
+                f"⚠️ فشل Google Translate - محاولة {attempt}:",
+                e
+            )
+
+        time.sleep(1)
+
+    # المحاولة الاحتياطية الأولى: MyMemory عبر deep-translator
+    try:
+        from deep_translator import MyMemoryTranslator
+
+        translated = MyMemoryTranslator(
+            source="en",
+            target="ar"
+        ).translate(text)
+
+        translated = clean_text(
+            translated
+        )
+
+        if (
+            translated
+            and not is_translation_error_text(
+                translated
+            )
+        ):
+            print(
+                "🔄 تم استخدام المترجم الاحتياطي بنجاح"
+            )
+            return translated
+
+    except Exception as e:
+
+        print(
+            "⚠️ فشل المترجم الاحتياطي:",
+            e
+        )
+
+
+    # المحاولة الاحتياطية الثانية: طلب HTTP مباشر
+    translated = translate_with_mymemory_http(
+        text
+    )
+
+    if translated:
+        return translated
+
+
+    return ""
+
+# =========================================================
+# قراءة التاريخ من RSS
+# =========================================================
+
+def parse_date(date_text):
+
+    if not date_text:
+        return 0
+
+    try:
+
+        dt = parsedate_to_datetime(
+            date_text
+        )
+
+        return int(
+            dt.timestamp()
+        )
+
+    except Exception:
+
+        return 0
+
+
+# =========================================================
+# منع الأخبار القديمة
+# =========================================================
+
+def is_story_too_old(timestamp):
+
+    if not timestamp:
+        # إذا لم يوفر المصدر تاريخاً، لا نستبعد الخبر تلقائياً
+        return False
+
+    now_ts = int(
+        datetime.now(
+            timezone.utc
+        ).timestamp()
+    )
+
+    max_age_seconds = (
+        MAX_NEWS_AGE_DAYS
+        * 24
+        * 60
+        * 60
+    )
+
+    return (
+        timestamp
+        < now_ts - max_age_seconds
+    )
+
+
+# =========================================================
+# سجل الأخبار المنشورة
+# =========================================================
+
+def load_published():
+
+    if not os.path.exists(
+        PUBLISHED_FILE
+    ):
+        return []
+
+    try:
+
+        with open(
+            PUBLISHED_FILE,
+            "r",
+            encoding="utf-8"
+        ) as file:
+
+            data = json.load(file)
+
+            if isinstance(
+                data,
+                list
+            ):
+                return data
+
+    except Exception as e:
+
+        print(
+            "⚠️ تعذر قراءة سجل الأخبار:",
+            e
+        )
+
+    return []
+
+
+def save_published(records):
+
+    with open(
+        PUBLISHED_FILE,
+        "w",
+        encoding="utf-8"
+    ) as file:
+
+        json.dump(
+            records,
+            file,
+            ensure_ascii=False,
+            indent=2
+        )
+
+
+def remember_story(
+    story,
+    published
+):
+
+    published.append({
+        "title": story["title"],
+        "link": story["link"],
+        "source": story["source"],
+        "published_at": int(
+            time.time()
+        )
+    })
+
+    if (
+        len(published)
+        > MAX_PUBLISHED_RECORDS
+    ):
+
+        published[:] = published[
+            -MAX_PUBLISHED_RECORDS:
+        ]
+
+    save_published(
+        published
+    )
+
+
+# =========================================================
+# منع التكرار
+# =========================================================
+
+def title_similarity(
+    first,
+    second
+):
+
+    first = normalize_title(
+        first
+    )
+
+    second = normalize_title(
+        second
+    )
+
+    if not first or not second:
+        return 0
+
+    return SequenceMatcher(
+        None,
+        first,
+        second
+    ).ratio()
+
+
+def important_words(title):
+
+    title = normalize_title(
+        title
+    )
+
+    words = set()
+
+    for word in title.split():
+
+        if len(word) < 3:
+            continue
+
+        if word in STOP_WORDS:
+            continue
+
+        words.add(word)
+
+    return words
+
+
+def event_similarity(
+    first,
+    second
+):
+
+    words1 = important_words(
+        first
+    )
+
+    words2 = important_words(
+        second
+    )
+
+    if not words1 or not words2:
+        return 0
+
+    shared = words1.intersection(
+        words2
+    )
+
+    # كلمة أو كلمتان مشتركتان لا تكفي
+    if len(shared) < 3:
+        return 0
+
+    smaller = min(
+        len(words1),
+        len(words2)
+    )
+
+    if not smaller:
+        return 0
+
+    return (
+        len(shared)
+        / smaller
+    )
+
+
+def was_published(
+    story,
+    published
+):
+
+    new_link = clean_link(
+        story.get(
+            "link",
+            ""
+        )
+    )
+
+    new_title = story.get(
+        "title",
+        ""
+    )
+
+    for old in published:
+
+        old_link = clean_link(
+            old.get(
+                "link",
+                ""
+            )
+        )
+
+        old_title = old.get(
+            "title",
+            ""
+        )
+
+        # نفس الرابط
+        if (
+            new_link
+            and old_link
+            and new_link == old_link
+        ):
+
+            return True
+
+        # عنوان شديد التشابه
+        if (
+            title_similarity(
+                new_title,
+                old_title
+            )
+            >= 0.86
+        ):
+
+            return True
+
+        # نفس الحدث تقريباً
+        if (
+            event_similarity(
+                new_title,
+                old_title
+            )
+            >= 0.70
+        ):
+
+            return True
+
+    return False
+
+
+# =========================================================
+# قراءة RSS أو Atom
+# =========================================================
+
+def extract_feed_items(
+    response_content
+):
+
+    soup = BeautifulSoup(
+        response_content,
+        "xml"
+    )
+
+    items = soup.find_all(
+        "item"
+    )
+
+    if items:
+        return items
+
+    return soup.find_all(
+        "entry"
+    )
+
+
+# =========================================================
+# قراءة رابط item
+# =========================================================
+
+def extract_item_link(item):
+
+    link_tag = item.find(
+        "link"
+    )
+
+    if not link_tag:
+        return ""
+
+    # RSS
+    text_link = link_tag.get_text(
+        strip=True
+    )
+
+    if text_link:
+        return clean_link(
+            text_link
+        )
+
+    # Atom
+    href = link_tag.get(
+        "href",
+        ""
+    )
+
+    return clean_link(
+        href
+    )
+
+
+# =========================================================
+# الحصول على تاريخ item
+# =========================================================
+
+def extract_item_date(item):
+
+    for name in [
+        "pubDate",
+        "published",
+        "updated"
+    ]:
+
+        tag = item.find(name)
+
+        if tag:
+
+            return parse_date(
+                tag.get_text(
+                    strip=True
+                )
+            )
+
+    return 0
+
+
+# =========================================================
+# استخراج مختصر الخبر من RSS
+# =========================================================
+
+def extract_item_summary(item):
+
+    summary = ""
+
+    for name in [
+        "description",
+        "summary",
+        "content",
+        "content:encoded"
+    ]:
+
+        tag = item.find(name)
+
+        if tag:
+            summary = tag.get_text(
+                " ",
+                strip=True
+            )
+            break
+
+    if not summary:
+        return ""
+
+    # إزالة HTML إن وجد داخل الوصف
+    summary = BeautifulSoup(
+        summary,
+        "html.parser"
+    ).get_text(
+        " ",
+        strip=True
+    )
+
+    summary = clean_text(
+        summary
+    )
+
+    # منع الوصف الطويل جداً
+    if len(summary) > 450:
+
+        summary = summary[:450]
+
+        # نحاول عدم قطع آخر كلمة
+        if " " in summary:
+            summary = summary.rsplit(
+                " ",
+                1
+            )[0]
+
+        summary += "..."
+
+    return summary
+
+
+# =========================================================
+# RSS مباشر
+# =========================================================
+
+def get_rss_candidates(
+    source
+):
+
+    try:
+
+        response = requests.get(
+            source["rss"],
+            headers=HEADERS,
+            timeout=REQUEST_TIMEOUT
+        )
+
+        response.raise_for_status()
+
+    except Exception as e:
+
+        print(
+            "❌ فشل RSS:",
+            source["name"]
+        )
+
+        print(e)
+
+        return []
+
+
+    items = extract_feed_items(
+        response.content
+    )
+
+
+    print(
+        "📥 إجمالي RSS:",
+        len(items)
+    )
+
+
+    candidates = []
+    old_news_count = 0
+    non_news_count = 0
+
+    seen_titles = set()
+    seen_links = set()
+
+
+    for item in items[
+        :MAX_ITEMS_PER_SOURCE
+    ]:
+
+        title_tag = item.find(
+            "title"
+        )
+
+        if not title_tag:
+            continue
+
+
+        original_title = clean_title(
+            title_tag.get_text(
+                " ",
+                strip=True
+            )
+        )
+
+
+        link = extract_item_link(
+            item
+        )
+
+
+        if (
+            not original_title
+            or not link
+        ):
+            continue
+
+
+        # مهم:
+        # العنوان نفسه يجب أن يشير إلى سوريا
+        if not is_syria_news(
+            original_title
+        ):
+            continue
+
+        # استبعاد الوظائف والمنح والمناقصات والدعوات غير الإخبارية
+        if (
+            is_non_news_content(
+                original_title
+            )
+            or is_archive_story(
+                original_title,
+                link
+            )
+            or is_non_article_link(
+                link
+            )
+        ):
+            non_news_count += 1
+            continue
+
+
+        normalized = normalize_title(
+            original_title
+        )
+
+
+        if normalized in seen_titles:
+            continue
+
+        if link in seen_links:
+            continue
+
+
+        seen_titles.add(
+            normalized
+        )
+
+        seen_links.add(
+            link
+        )
+
+
+        # لا نترجم المصادر الأجنبية أثناء جمع المرشحين.
+        # الترجمة ستتم فقط بعد اختيار أحدث خبر غير مكرر.
+        arabic_title = original_title
+
+        summary = extract_item_summary(
+            item
+        )
+
+
+        image = extract_item_image(
+            item
+        )
+
+
+        timestamp = extract_item_date(
+            item
+        )
+
+        if is_story_too_old(
+            timestamp
+        ):
+            old_news_count += 1
+            continue
+
+
+        candidates.append({
+            "title": arabic_title,
+            "original_title": original_title,
+            "summary": summary,
+            "link": link,
+            "source": source["name"],
+            "icon": source["icon"],
+            "language": source.get("language", "ar"),
+            "timestamp": timestamp,
+            "published_at": 0,
+            "image": image,
+            "direct_link": True
+        })
+
+
+    if old_news_count:
+        print(
+            "🕒 تم استبعاد",
+            old_news_count,
+            "خبراً قديماً."
+        )
+
+    if non_news_count:
+        print(
+            "🚫 تم استبعاد",
+            non_news_count,
+            "محتوى غير إخباري."
+        )
+
+
+    candidates.sort(
+        key=lambda story: story.get(
+            "timestamp",
+            0
+        ),
+        reverse=True
+    )
+
+
+    print(
+        "🇸🇾 أخبار سوريا المطابقة:",
+        len(candidates)
+    )
+
+
+    return candidates
+
+
+
+
+# =========================================================
+# محاولة تحويل رابط Google News إلى رابط المصدر الأصلي
+# =========================================================
+
+def resolve_google_news_link(link):
+
+    link = clean_link(link)
+
+    if not link or "news.google.com" not in link:
+        return link, True
+
+    try:
+
+        response = requests.get(
+            link,
+            headers=HEADERS,
+            timeout=REQUEST_TIMEOUT,
+            allow_redirects=True
+        )
+
+        final_url = clean_link(
+            response.url
+        )
+
+        if (
+            final_url
+            and "news.google.com" not in final_url
+        ):
+            return final_url, True
+
+    except Exception as e:
+
+        print(
+            "⚠️ تعذر فك رابط Google News:",
+            e
+        )
+
+    # إذا لم نستطع الوصول للرابط الأصلي، نحتفظ برابط Google News
+    return link, False
+
+
+# =========================================================
+# Google News
+# =========================================================
+
+def google_news_url(
+    domain,
+    arabic=False
+):
+
+    query = (
+        '("Syria" OR "Syrian" '
+        'OR "Damascus" OR "Aleppo" '
+        'OR "سوريا" OR "سورية" '
+        'OR "دمشق" OR "حلب") '
+        f"site:{domain}"
+    )
+
+    encoded = urllib.parse.quote(
+        query
+    )
+
+
+    if arabic:
+
+        return (
+            "https://news.google.com/rss/search"
+            f"?q={encoded}"
+            "&hl=ar"
+            "&gl=AE"
+            "&ceid=AE:ar"
+        )
+
+
+    return (
+        "https://news.google.com/rss/search"
+        f"?q={encoded}"
+        "&hl=en-US"
+        "&gl=US"
+        "&ceid=US:en"
+    )
+
+
+def get_google_candidates(
+    source
+):
+
+    rss_url = google_news_url(
+        source["domain"],
+        arabic=(
+            source.get(
+                "language"
+            ) == "ar"
+        )
+    )
+
+
+    try:
+
+        response = requests.get(
+            rss_url,
+            headers=HEADERS,
+            timeout=REQUEST_TIMEOUT
+        )
+
+        response.raise_for_status()
+
+    except Exception as e:
+
+        print(
+            "❌ فشل Google News:",
+            source["name"]
+        )
+
+        print(e)
+
+        return []
+
+
+    items = extract_feed_items(
+        response.content
+    )
+
+    candidates = []
+    old_news_count = 0
+    non_news_count = 0
+
+    seen_titles = set()
+
+
+    for item in items[
+        :MAX_ITEMS_PER_SOURCE
+    ]:
+
+        title_tag = item.find(
+            "title"
+        )
+
+        if not title_tag:
+            continue
+
+
+        original_title = clean_title(
+            title_tag.get_text(
+                " ",
+                strip=True
+            )
+        )
+
+        link = extract_item_link(
+            item
+        )
+
+
+        if (
+            not original_title
+            or not link
+        ):
+            continue
+
+
+        # لا نحاول فك رابط Google News هنا.
+        # سيتم فك رابط الخبر المختار فقط بعد منع القديم والتكرار.
+        direct_link = False
+
+
+        if not is_syria_news(
+            original_title
+        ):
+            continue
+
+        if (
+            is_non_news_content(
+                original_title
+            )
+            or is_archive_story(
+                original_title,
+                link
+            )
+            or is_non_article_link(
+                link
+            )
+            or is_probable_topic_title(
+                original_title
+            )
+            or is_suspicious_source_topic_title(
+                source.get("name", ""),
+                original_title
+            )
+        ):
+            non_news_count += 1
+            continue
+
+
+        timestamp = extract_item_date(
+            item
+        )
+
+        if is_story_too_old(
+            timestamp
+        ):
+            old_news_count += 1
+            continue
+
+
+        normalized = normalize_title(
+            original_title
+        )
+
+
+        if normalized in seen_titles:
+            continue
+
+
+        seen_titles.add(
+            normalized
+        )
+
+
+        # لا نترجم هنا؛ نؤجل الترجمة إلى ما بعد منع التكرار.
+        arabic_title = original_title
+
+        image = extract_item_image(
+            item
+        )
+
+
+        candidates.append({
+            "title": arabic_title,
+            "original_title": original_title,
+            "summary": "",
+            "link": link,
+            "source": source["name"],
+            "icon": source["icon"],
+            "language": source.get("language", "en"),
+            "timestamp": timestamp,
+            "published_at": 0,
+            "image": image,
+            "direct_link": direct_link
+        })
+
+
+    if old_news_count:
+        print(
+            "🕒 تم استبعاد",
+            old_news_count,
+            "خبراً قديماً."
+        )
+
+    if non_news_count:
+        print(
+            "🚫 تم استبعاد",
+            non_news_count,
+            "محتوى غير إخباري."
+        )
+
+
+    candidates.sort(
+        key=lambda story: story.get(
+            "timestamp",
+            0
+        ),
+        reverse=True
+    )
+
+
+    return candidates
+
+
+# =========================================================
+# RSS مع fallback تلقائي
+# =========================================================
+
+def get_source_candidates(
+    source
+):
+
+    candidates = []
+
+    if source.get("rss"):
+
+        candidates = (
+            get_rss_candidates(
+                source
+            )
+        )
+
+
+    if (
+        not candidates
+        and source.get(
+            "google_fallback"
+        )
+        and source.get(
+            "domain"
+        )
+    ):
+
+        print(
+            "↪️ تجربة Google News كبديل..."
+        )
+
+        candidates = (
+            get_google_candidates(
+                source
+            )
+        )
+
+
+    return candidates
+
+
+# =========================================================
+# اختيار أحدث خبر لم يُنشر
+# =========================================================
+
+def choose_new_story(
+    candidates,
+    published
+):
+
+    duplicate_count = 0
+
+
+    for story in candidates:
+
+        if was_published(
+            story,
+            published
+        ):
+
+            duplicate_count += 1
+            continue
+
+
+        return (
+            story,
+            duplicate_count
+        )
+
+
+    return (
+        None,
+        duplicate_count
+    )
+
+
+# =========================================================
+# Telegram
+#
+# المستخدم يرى فقط "مصدر الخبر"
+# ولا يرى الرابط الطويل.
+# =========================================================
+
+def build_message(story):
+
+    title = html.escape(
+        clean_title(
+            story["title"]
+        )
+    )
+
+    source = html.escape(
+        story["source"]
+    )
+
+    link = html.escape(
+        story["link"],
+        quote=True
+    )
+
+    summary = clean_text(
+        story.get(
+            "summary",
+            ""
+        )
+    )
+
+    if summary:
+
+        summary = html.escape(
+            summary
+        )
+
+        return f"""📰 <b>{title}</b>
+
+📝 <b>مختصر الخبر:</b>
+{summary}
+
+{story["icon"]} المصدر: {source}
+
+🔗 <a href="{link}">مصدر الخبر</a>"""
+
+
+    return f"""📰 <b>{title}</b>
+
+{story["icon"]} المصدر: {source}
+
+🔗 <a href="{link}">مصدر الخبر</a>"""
+
+
+def send_to_telegram(
+    story
+):
+
+    message = build_message(
+        story
+    )
+
+
+    data = urllib.parse.urlencode({
+        "chat_id": TELEGRAM_CHANNEL,
+        "text": message,
+        "parse_mode": "HTML",
+        "disable_web_page_preview": True
+    }).encode(
+        "utf-8"
+    )
+
+
+    url = (
+        "https://api.telegram.org/"
+        f"bot{TELEGRAM_TOKEN}/sendMessage"
+    )
+
+
+    with urllib.request.urlopen(
+        url,
+        data=data,
+        timeout=30
+    ) as response:
+
+        result = json.loads(
+            response
+            .read()
+            .decode("utf-8")
+        )
+
+
+    return result.get(
+        "ok",
+        False
+    )
+
+
+
+# =========================================================
+# Facebook
+# =========================================================
+
+def build_facebook_message(story):
+
+    title = clean_title(
+        story["title"]
+    )
+
+    summary = clean_text(
+        story.get(
+            "summary",
+            ""
+        )
+    )
+
+    source = clean_text(
+        story["source"]
+    )
+
+    link = clean_link(
+        story["link"]
+    )
+
+
+    if summary:
+
+        return f"""📰 {title}
+
+📝 مختصر الخبر:
+{summary}
+
+{story["icon"]} المصدر: {source}
+
+🔗 مصدر الخبر:
+{link}"""
+
+
+    return f"""📰 {title}
+
+{story["icon"]} المصدر: {source}
+
+🔗 مصدر الخبر:
+{link}"""
+
+
+def send_to_facebook(
+    story
+):
+
+    message = build_facebook_message(
+        story
+    )
+
+    url = (
+        "https://graph.facebook.com/"
+        f"{FACEBOOK_API_VERSION}/"
+        f"{FACEBOOK_PAGE_ID}/feed"
+    )
+
+    response = requests.post(
+        url,
+        data={
+            "message": message,
+            "access_token": FACEBOOK_PAGE_TOKEN
+        },
+        timeout=REQUEST_TIMEOUT
+    )
+
+    try:
+        result = response.json()
+    except Exception:
+        result = {}
+
+    if response.ok and result.get("id"):
+        return True, result.get("id")
+
+    error_message = ""
+
+    if isinstance(result, dict):
+        error_message = (
+            result.get("error", {}).get("message", "")
+        )
+
+    if not error_message:
+        error_message = response.text
+
+    raise RuntimeError(
+        f"Facebook API: {error_message}"
+    )
+
+
+
+# =========================================================
+# نشر الخبر
+# =========================================================
+
+def publish_story(
+    story,
+    published
+):
+
+    telegram_ok = False
+    facebook_ok = False
+
+
+    # -------------------------
+    # Telegram
+    # -------------------------
+
+    try:
+
+        telegram_ok = send_to_telegram(
+            story
+        )
+
+        if telegram_ok:
+
+            print(
+                "✅ تم النشر على Telegram"
+            )
+
+
+            if story.get(
+                "direct_link"
+            ):
+
+                print(
+                    "🔗 رابط المصدر: مباشر ✅"
+                )
+
+            else:
+
+                print(
+                    "🔗 رابط المصدر: Google News ⚠️"
+                )
+
+        else:
+
+            print(
+                "❌ Telegram لم يؤكد النشر"
+            )
+
+
+    except Exception as e:
+
+        print(
+            "❌ خطأ Telegram:"
+        )
+
+        print(e)
+
+
+    # -------------------------
+    # Facebook
+    # -------------------------
+
+    try:
+
+        facebook_ok, facebook_post_id = send_to_facebook(
+            story
+        )
+
+        if facebook_ok:
+
+            print(
+                "✅ تم النشر على Facebook"
+            )
+
+            print(
+                "🆔 Facebook Post ID:",
+                facebook_post_id
+            )
+
+
+    except Exception as e:
+
+        print(
+            "❌ خطأ Facebook:"
+        )
+
+        print(e)
+
+
+    # نحفظ الخبر إذا نجح النشر على منصة واحدة على الأقل.
+    # هذا يمنع ضياع الخبر بالكامل إذا تعطل أحد الطرفين.
+    if telegram_ok or facebook_ok:
+
+        # وقت دخول الخبر إلى نبض سوريا.
+        story["published_at"] = int(
+            time.time()
+        )
+
+        remember_story(
+            story,
+            published
+        )
+
+        save_story_for_app(
+            story
+        )
+
+        return True
+
+
+    return False
+
+
+# =========================================================
+# معالجة مصدر واحد
+# =========================================================
+
+def process_source(
+    source,
+    candidates,
+    published
+):
+
+    print(
+        "📋 الأخبار السورية المرشحة:",
+        len(candidates)
+    )
+
+
+    if not candidates:
+
+        print(
+            "لا يوجد خبر سوري مناسب حالياً."
+        )
+
+        return False
+
+
+    story, duplicates = choose_new_story(
+        candidates,
+        published
+    )
+
+
+    print(
+        "🔁 تم تجاوز:",
+        duplicates,
+        "خبر منشور أو مشابه"
+    )
+
+
+    if not story:
+
+        print(
+            "⏭️ لا يوجد خبر جديد في هذا المصدر."
+        )
+
+        return False
+
+
+    story = prepare_story_for_publishing(
+        story
+    )
+
+
+    if not story:
+
+        return False
+
+
+    # فحص تكرار ثانٍ بعد الترجمة.
+    # هذا يساعد في اكتشاف نفس الحدث المنشور سابقاً بالعربية
+    # من مصدر أجنبي مختلف.
+    if was_published(
+        story,
+        published
+    ):
+
+        print(
+            "🔁 تم استبعاد الخبر بعد الترجمة لأنه منشور أو مشابه لخبر سابق."
+        )
+
+        return False
+
+
+    print(
+        "🆕 أحدث خبر جديد:"
+    )
+
+    print(
+        story["title"]
+    )
+
+
+    return publish_story(
+        story,
+        published
+    )
+
+
+# =========================================================
+# التشغيل
+# =========================================================
+
+print()
+print("=" * 75)
+print("بوت أخبار سوريا - Telegram + Facebook + App - v13 مستقل")
+print("=" * 75)
+
+
+published = load_published()
+
+
+print(
+    "📚 سجل منع التكرار:",
+    len(published),
+    "خبراً"
+)
+
+
+total_new = 0
+
+
+# =========================================================
+# 1. المصادر العربية RSS
+# =========================================================
+
+for source in ARABIC_RSS_SOURCES:
+
+    if total_new >= MAX_POSTS_PER_RUN:
+        break
+
+
+    print()
+    print("=" * 75)
+    print(
+        "🇸🇾/🌍 مصدر عربي:",
+        source["name"]
+    )
+    print("=" * 75)
+
+
+    candidates = (
+        get_source_candidates(
+            source
+        )
+    )
+
+
+    if process_source(
+        source,
+        candidates,
+        published
+    ):
+
+        total_new += 1
+
+
+    time.sleep(1)
+
+
+# =========================================================
+# 2. المصادر الأجنبية RSS
+# =========================================================
+
+for source in GLOBAL_RSS_SOURCES:
+
+    if total_new >= MAX_POSTS_PER_RUN:
+        break
+
+
+    print()
+    print("=" * 75)
+    print(
+        "🌍 مصدر عالمي:",
+        source["name"]
+    )
+    print("=" * 75)
+
+
+    candidates = (
+        get_source_candidates(
+            source
+        )
+    )
+
+
+    if process_source(
+        source,
+        candidates,
+        published
+    ):
+
+        total_new += 1
+
+
+    time.sleep(1)
+
+
+# =========================================================
+# 3. مصادر Google News الاحتياطية
+# =========================================================
+
+for source in GOOGLE_ONLY_SOURCES:
+
+    if total_new >= MAX_POSTS_PER_RUN:
+        break
+
+
+    print()
+    print("=" * 75)
+    print(
+        "🛰️ مصدر احتياطي:",
+        source["name"]
+    )
+    print("=" * 75)
+
+
+    candidates = (
+        get_google_candidates(
+            source
+        )
+    )
+
+
+    if process_source(
+        source,
+        candidates,
+        published
+    ):
+
+        total_new += 1
+
+
+    time.sleep(1)
+
+
+# =========================================================
+# النهاية
+# =========================================================
+
+print()
+print("=" * 75)
+
+print(
+    "📚 حجم سجل منع التكرار الآن:",
+    len(published)
+)
+
+
+if total_new == 0:
+
+    print(
+        "لا توجد أخبار سورية جديدة للنشر."
+    )
+
+else:
+
+    print(
+        "✅ تم نشر",
+        total_new,
+        "أخبار سورية جديدة."
+    )
+
+
+print("=" * 75)
+
