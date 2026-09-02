@@ -928,7 +928,10 @@ async function loadNews(
             NEWS_URL.includes("?")
             ? "&"
             : "?";
+        const loading =
+    document.getElementById("loading");
 
+loading.classList.remove("hidden");
 
         const response =
             await fetch(
@@ -1008,6 +1011,15 @@ async function loadNews(
 
 
     } finally {
+        
+
+     const loading =
+        document.getElementById("loading");
+
+    loading.classList.add("hidden");
+
+
+    if (timeout) {
 
         if (timeout) {
 
