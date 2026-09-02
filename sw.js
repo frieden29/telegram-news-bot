@@ -1,12 +1,13 @@
 const CACHE_NAME =
-    "nabd-syria-v5";
+    "nabd-syria-v6";
 
 const APP_FILES = [
     "./",
     "./index.html",
     "./style.css",
     "./app.js",
-    "./manifest.json"
+    "./manifest.json",
+    "./logo2.png"
 ];
 
 
