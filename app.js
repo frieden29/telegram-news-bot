@@ -270,14 +270,26 @@ function sortNewsByTime(newsItems) {
     return [...newsItems].sort(
         (a, b) => {
 
-            return (
-                getSortTimestamp(b)
-                -
-                getSortTimestamp(a)
-            );
+            const timeA =
+                Number(
+                    a.published_at
+                    || a.timestamp
+                    || 0
+                );
+
+            const timeB =
+                Number(
+                    b.published_at
+                    || b.timestamp
+                    || 0
+                );
+
+            return timeB - timeA;
         }
     );
 }
+
+  
 
 
 /* =========================================================
