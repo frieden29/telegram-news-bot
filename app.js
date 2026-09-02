@@ -13,11 +13,20 @@ const errorMessage =
     document.getElementById("errorMessage") ||
     document.getElementById("error");
 
-const detailsScreen = document.getElementById("detailsScreen");
-const detailsTitle = document.getElementById("detailsTitle");
-const detailsDescription = document.getElementById("detailsDescription");
-const detailsSource = document.getElementById("detailsSource");
-const detailsTime = document.getElementById("detailsTime");
+const detailsScreen =
+    document.getElementById("detailsScreen");
+
+const detailsTitle =
+    document.getElementById("detailsTitle");
+
+const detailsDescription =
+    document.getElementById("detailsDescription");
+
+const detailsSource =
+    document.getElementById("detailsSource");
+
+const detailsTime =
+    document.getElementById("detailsTime");
 
 const detailsLink =
     document.getElementById("detailsLink") ||
@@ -27,7 +36,8 @@ const homeButton =
     document.getElementById("homeButton") ||
     document.querySelector(".home-button");
 
-const header = document.querySelector(".header");
+const header =
+    document.querySelector(".header");
 
 let refreshButton = null;
 let currentDetailsUrl = "";
@@ -106,7 +116,9 @@ function getNewsTime(news) {
      * هذا هو الأقرب إلى وقت نشره على Telegram.
      */
     const publishedAt =
-        Number(news.published_at || 0);
+        Number(
+            news.published_at || 0
+        );
 
     const publishedTime =
         formatBerlinTime(
@@ -124,7 +136,9 @@ function getNewsTime(news) {
      * timestamp الخاص بالمصدر لتصدر الأخبار.
      */
     const savedTime =
-        safeText(news.time);
+        safeText(
+            news.time
+        );
 
     if (
         savedTime &&
@@ -144,7 +158,9 @@ function getNewsTime(news) {
 function getNewsImage(news) {
 
     const image =
-        safeText(news.image);
+        safeText(
+            news.image
+        );
 
     if (
         image.startsWith("https://") ||
@@ -163,14 +179,18 @@ function createNewsImage(
 ) {
 
     const imageUrl =
-        getNewsImage(news);
+        getNewsImage(
+            news
+        );
 
     if (!imageUrl) {
         return null;
     }
 
     const img =
-        document.createElement("img");
+        document.createElement(
+            "img"
+        );
 
     img.className =
         className;
@@ -179,7 +199,9 @@ function createNewsImage(
         imageUrl;
 
     img.alt =
-        safeText(news.title) ||
+        safeText(
+            news.title
+        ) ||
         "صورة الخبر";
 
     img.loading =
@@ -191,6 +213,7 @@ function createNewsImage(
     img.addEventListener(
         "error",
         () => {
+
             img.remove();
         }
     );
@@ -248,11 +271,15 @@ function sortNewsByTime(newsItems) {
                     );
 
                 const aHasPublished =
-                    Number.isFinite(aPublished) &&
+                    Number.isFinite(
+                        aPublished
+                    ) &&
                     aPublished > 0;
 
                 const bHasPublished =
-                    Number.isFinite(bPublished) &&
+                    Number.isFinite(
+                        bPublished
+                    ) &&
                     bPublished > 0;
 
 
@@ -264,6 +291,7 @@ function sortNewsByTime(newsItems) {
                     aHasPublished &&
                     bHasPublished
                 ) {
+
                     return (
                         bPublished -
                         aPublished
@@ -295,7 +323,8 @@ function sortNewsByTime(newsItems) {
             }
         )
         .map(
-            item => item.news
+            item =>
+                item.news
         );
 }
 
@@ -323,14 +352,20 @@ function createRefreshButton() {
         return;
     }
 
+
     const actions =
-        document.createElement("div");
+        document.createElement(
+            "div"
+        );
 
     actions.className =
         "header-actions";
 
+
     refreshButton =
-        document.createElement("button");
+        document.createElement(
+            "button"
+        );
 
     refreshButton.id =
         "refreshNewsButton";
@@ -344,12 +379,17 @@ function createRefreshButton() {
     refreshButton.innerHTML =
         '<span class="refresh-icon">↻</span> تحديث الأخبار';
 
+
     refreshButton.addEventListener(
         "click",
         () => {
-            loadNews(true);
+
+            loadNews(
+                true
+            );
         }
     );
+
 
     actions.appendChild(
         refreshButton
@@ -433,7 +473,9 @@ function showHome() {
 function openExternalSource(url) {
 
     const safeUrl =
-        safeText(url);
+        safeText(
+            url
+        );
 
     if (
         !safeUrl ||
@@ -444,6 +486,7 @@ function openExternalSource(url) {
     ) {
         return;
     }
+
 
     /*
      * لا نستخدم window.open.
@@ -464,11 +507,15 @@ function showDetails(news) {
         return;
     }
 
+
     if (detailsTitle) {
 
         detailsTitle.textContent =
-            safeText(news.title);
+            safeText(
+                news.title
+            );
     }
+
 
     if (detailsDescription) {
 
@@ -486,21 +533,29 @@ function showDetails(news) {
         );
     }
 
+
     if (detailsSource) {
 
         detailsSource.textContent =
-            safeText(news.source);
+            safeText(
+                news.source
+            );
     }
+
 
     if (detailsTime) {
 
         detailsTime.textContent =
-            getNewsTime(news);
+            getNewsTime(
+                news
+            );
     }
 
 
     currentDetailsUrl =
-        safeText(news.url);
+        safeText(
+            news.url
+        );
 
 
     if (detailsLink) {
@@ -517,6 +572,7 @@ function showDetails(news) {
             "hidden",
             !hasValidUrl
         );
+
 
         if (hasValidUrl) {
 
@@ -549,6 +605,7 @@ function showDetails(news) {
             ".details-card"
         );
 
+
     if (detailsCard) {
 
         const oldImage =
@@ -557,14 +614,17 @@ function showDetails(news) {
             );
 
         if (oldImage) {
+
             oldImage.remove();
         }
+
 
         const image =
             createNewsImage(
                 news,
                 "details-image"
             );
+
 
         if (image) {
 
@@ -583,6 +643,7 @@ function showDetails(news) {
         );
     }
 
+
     if (newsList) {
 
         newsList.classList.add(
@@ -590,9 +651,11 @@ function showDetails(news) {
         );
     }
 
+
     detailsScreen.classList.remove(
         "hidden"
     );
+
 
     window.scrollTo(
         0,
@@ -611,8 +674,10 @@ function renderNews(newsItems) {
         return;
     }
 
+
     newsList.innerHTML =
         "";
+
 
     if (
         !Array.isArray(newsItems) ||
@@ -632,7 +697,9 @@ function renderNews(newsItems) {
     const cleanNews =
         newsItems.filter(
             news =>
-                !isArchiveNews(news)
+                !isArchiveNews(
+                    news
+                )
         );
 
 
@@ -688,6 +755,7 @@ function renderNews(newsItems) {
                     news.title
                 );
 
+
             textArea.appendChild(
                 title
             );
@@ -697,6 +765,7 @@ function renderNews(newsItems) {
                 safeText(
                     news.description
                 );
+
 
             if (descriptionText) {
 
@@ -710,6 +779,7 @@ function renderNews(newsItems) {
 
                 description.textContent =
                     descriptionText;
+
 
                 textArea.appendChild(
                     description
@@ -727,6 +797,7 @@ function renderNews(newsItems) {
                     news,
                     "news-image"
                 );
+
 
             if (image) {
 
@@ -786,6 +857,7 @@ function renderNews(newsItems) {
                 time
             );
 
+
             card.appendChild(
                 meta
             );
@@ -823,19 +895,27 @@ function getSavedNews() {
                 STORAGE_KEY
             );
 
+
         if (!saved) {
+
             return null;
         }
 
+
         const data =
-            JSON.parse(saved);
+            JSON.parse(
+                saved
+            );
+
 
         if (
             Array.isArray(data) &&
             data.length > 0
         ) {
+
             return data;
         }
+
 
     } catch (error) {
 
@@ -844,6 +924,7 @@ function getSavedNews() {
             error
         );
     }
+
 
     return null;
 }
@@ -873,6 +954,7 @@ async function loadNews(
             savedNews
         );
 
+
         if (loadingMessage) {
 
             loadingMessage.classList.add(
@@ -883,8 +965,8 @@ async function loadNews(
 
 
     /*
-     * إظهار رسالة التحميل فقط عندما لا توجد
-     * نسخة محفوظة سابقة.
+     * إظهار عبارة "جاري تحميل الأخبار..."
+     * فقط عندما لا توجد نسخة محفوظة.
      */
     if (
         !savedNews &&
@@ -898,6 +980,10 @@ async function loadNews(
     }
 
 
+    /*
+     * عند الضغط على زر التحديث
+     * نغيّر حالة الزر فقط.
+     */
     if (manualRefresh) {
 
         setRefreshLoading(
@@ -906,6 +992,10 @@ async function loadNews(
     }
 
 
+    /*
+     * إخفاء رسالة الخطأ القديمة
+     * قبل محاولة التحميل الجديدة.
+     */
     if (errorMessage) {
 
         errorMessage.classList.add(
@@ -924,12 +1014,14 @@ async function loadNews(
             new AbortController();
 
 
+        /*
+         * إلغاء الطلب إذا استغرق أكثر من 8 ثوانٍ.
+         */
         timeout =
             setTimeout(
                 () => {
 
                     controller.abort();
-
                 },
                 8000
             );
@@ -941,6 +1033,10 @@ async function loadNews(
             : "?";
 
 
+        /*
+         * إضافة الوقت تمنع المتصفح من إعادة
+         * استخدام نسخة news.json قديمة.
+         */
         const response =
             await fetch(
                 NEWS_URL +
@@ -975,16 +1071,25 @@ async function loadNews(
         }
 
 
+        /*
+         * عرض الأخبار الجديدة.
+         */
         renderNews(
             data
         );
 
 
+        /*
+         * حفظ نسخة من الأخبار للاستخدام
+         * السريع عند فتح التطبيق لاحقاً.
+         */
         try {
 
             localStorage.setItem(
                 STORAGE_KEY,
-                JSON.stringify(data)
+                JSON.stringify(
+                    data
+                )
             );
 
         } catch (error) {
@@ -1004,6 +1109,10 @@ async function loadNews(
         );
 
 
+        /*
+         * لا نظهر رسالة خطأ إذا كانت لدينا
+         * أخبار محفوظة معروضة بالفعل.
+         */
         if (
             !savedNews &&
             errorMessage
@@ -1020,6 +1129,9 @@ async function loadNews(
 
     } finally {
 
+        /*
+         * إلغاء مؤقت انتهاء المهلة.
+         */
         if (timeout) {
 
             clearTimeout(
@@ -1029,8 +1141,11 @@ async function loadNews(
 
 
         /*
-         * إخفاء عبارة جاري تحميل الأخبار
-         * بعد انتهاء محاولة التحميل.
+         * أهم جزء:
+         *
+         * تختفي عبارة "جاري تحميل الأخبار..."
+         * دائماً بعد انتهاء عملية التحميل،
+         * سواء نجحت أو فشلت.
          */
         if (loadingMessage) {
 
@@ -1040,163 +1155,10 @@ async function loadNews(
         }
 
 
-        setRefreshLoading(
-            false
-        );
-    }
-}
-
-
-   
-
-        setRefreshLoading(
-            true
-        );
-    }
-
-
-    if (errorMessage) {
-
-        errorMessage.classList.add(
-            "hidden"
-        );
-    }
-
-
-    let timeout =
-        null;
-
-
-    try {
-
-        const controller =
-            new AbortController();
-
-
-        timeout =
-            setTimeout(
-                () => {
-
-                    controller.abort();
-
-                },
-                8000
-            );
-
-
-        const separator =
-            NEWS_URL.includes("?")
-            ? "&"
-            : "?";
-        const loading =
-    document.getElementById("loading");
-
-loading.classList.remove("hidden");
-
-        const response =
-            await fetch(
-                NEWS_URL +
-                separator +
-                "t=" +
-                Date.now(),
-                {
-                    cache: "no-store",
-                    signal: controller.signal
-                }
-            );
-
-
-        if (!response.ok) {
-
-            throw new Error(
-                "HTTP " +
-                response.status
-            );
-        }
-
-
-        const data =
-            await response.json();
-
-
-        if (!Array.isArray(data)) {
-
-            throw new Error(
-                "news.json غير صالح"
-            );
-        }
-
-
-        renderNews(
-            data
-        );
-
-
-        try {
-
-            localStorage.setItem(
-                STORAGE_KEY,
-                JSON.stringify(data)
-            );
-
-        } catch (error) {
-
-            console.warn(
-                "تعذر حفظ الأخبار:",
-                error
-            );
-        }
-
-
-    } catch (error) {
-
-        console.warn(
-            "تعذر تحديث الأخبار:",
-            error
-        );
-
-
-        if (
-            !savedNews &&
-            errorMessage
-        ) {
-
-            errorMessage.textContent =
-                "تعذر تحميل الأخبار. حاول الضغط على تحديث الأخبار.";
-
-            errorMessage.classList.remove(
-                "hidden"
-            );
-        }
-
-
-    } finally {
-        
-
-     const loading =
-        document.getElementById("loading");
-
-    loading.classList.add("hidden");
-
-
-    if (timeout) {
-
-        if (timeout) {
-
-            clearTimeout(
-                timeout
-            );
-        }
-
-
-        if (loadingMessage) {
-
-            loadingMessage.classList.add(
-                "hidden"
-            );
-        }
-
-
+        /*
+         * إعادة زر تحديث الأخبار
+         * إلى حالته الطبيعية.
+         */
         setRefreshLoading(
             false
         );
@@ -1252,11 +1214,24 @@ document.addEventListener(
     "DOMContentLoaded",
     () => {
 
+        /*
+         * إنشاء زر التحديث.
+         */
         createRefreshButton();
 
+
+        /*
+         * إظهار الصفحة الرئيسية.
+         */
         showHome();
 
-        loadNews(false);
+
+        /*
+         * تحميل الأخبار.
+         */
+        loadNews(
+            false
+        );
     }
 );
 
@@ -1282,6 +1257,9 @@ if (
                 .then(
                     registration => {
 
+                        /*
+                         * طلب التحقق من وجود إصدار جديد.
+                         */
                         registration.update();
                     }
                 )
