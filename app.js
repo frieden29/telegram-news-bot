@@ -1047,19 +1047,7 @@ async function loadNews(
 }
 
 
-    if (
-        !savedNews &&
-        !manualRefresh &&
-        loadingMessage
-    ) {
-
-        loadingMessage.classList.remove(
-            "hidden"
-        );
-    }
-
-
-    if (manualRefresh) {
+   
 
         setRefreshLoading(
             true
