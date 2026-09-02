@@ -33,7 +33,7 @@ jobs:
           TELEGRAM_CHANNEL: ${{ secrets.TELEGRAM_CHANNEL }}
           FACEBOOK_PAGE_ID: ${{ secrets.FACEBOOK_PAGE_ID }}
           FACEBOOK_PAGE_TOKEN: ${{ secrets.FACEBOOK_PAGE_TOKEN }}
-        run: python syria_news_bot_telegram_facebook_v12.py
+        run: python syria_news_bot_telegram_facebook_v12_standalone.py
 
       - name: Save published news and app news
         if: always()
