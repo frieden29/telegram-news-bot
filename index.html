@@ -1,69 +1,176 @@
 <!DOCTYPE html>
 <html lang="ar" dir="rtl">
+
 <head>
+
     <meta charset="UTF-8">
-    <meta name="viewport"
-          content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 
-    <meta name="theme-color" content="#ffffff">
+    <meta
+        name="viewport"
+        content="width=device-width, initial-scale=1.0, viewport-fit=cover"
+    >
 
-    <title>أخبار سوريا</title>
+    <meta
+        name="theme-color"
+        content="#ffffff"
+    >
 
-    <link rel="manifest" href="manifest.json">
-    <link rel="stylesheet" href="style.css">
+    <title>نبض سوريا</title>
 
-    <meta name="apple-mobile-web-app-capable" content="yes">
-    <meta name="apple-mobile-web-app-status-bar-style" content="default">
-    <meta name="apple-mobile-web-app-title" content="أخبار سوريا">
+    <link
+        rel="manifest"
+        href="manifest.json"
+    >
+
+    <link
+        rel="stylesheet"
+        href="style.css"
+    >
+
+    <meta
+        name="apple-mobile-web-app-capable"
+        content="yes"
+    >
+
+    <meta
+        name="apple-mobile-web-app-status-bar-style"
+        content="default"
+    >
+
+    <meta
+        name="apple-mobile-web-app-title"
+        content="نبض سوريا"
+    >
+
 </head>
+
 
 <body>
 
 <div id="app">
 
+
+    <!-- =====================================================
+         الصفحة الرئيسية
+         ===================================================== -->
+
     <section id="homeScreen">
-         <header class="header">
 
-  <img
-    src="logo2.png"
-    alt="نبض سوريا"
-    class="app-logo"
-  >
 
-  <div class="header-text">
-    <h1>نبض سوريا</h1>
-    <p>أخبار سوريا من مصادر متعددة</p>
-  </div>
+        <!-- =================================================
+             رأس الصفحة
+             ================================================= -->
 
-         </header>
+        <header class="header">
 
-        
-        <div id="loading" class="message">
+            <img
+                src="logo2.png"
+                alt="نبض سوريا"
+                class="app-logo"
+            >
+
+
+            <div class="header-text">
+
+                <h1>
+                    نبض سوريا
+                </h1>
+
+                <p>
+                    أخبار سوريا من مصادر متعددة
+                </p>
+
+
+                <!-- عدد زوار نبض سوريا -->
+
+                <div
+                    id="visitorStats"
+                    class="visitor-stats"
+                >
+
+                    <span class="visitor-icon">
+                        👥
+                    </span>
+
+                    <span>
+                        زوار نبض سوريا
+                    </span>
+
+                    <strong id="visitorCount">
+                        —
+                    </strong>
+
+                </div>
+
+            </div>
+
+        </header>
+
+
+        <!-- =================================================
+             التحميل
+             ================================================= -->
+
+        <div
+            id="loading"
+            class="message"
+        >
             جاري تحميل الأخبار...
         </div>
 
-        <div id="error" class="message error hidden">
+
+        <!-- =================================================
+             الخطأ
+             ================================================= -->
+
+        <div
+            id="error"
+            class="message error hidden"
+        >
             تعذر تحميل الأخبار.
         </div>
 
+
+        <!-- =================================================
+             قائمة الأخبار
+             ================================================= -->
+
         <main id="newsList"></main>
+
 
     </section>
 
 
-    <section id="detailsScreen" class="hidden">
+
+    <!-- =====================================================
+         صفحة تفاصيل الخبر
+         ===================================================== -->
+
+    <section
+        id="detailsScreen"
+        class="hidden"
+    >
+
 
         <div class="details-top">
 
-            <button id="homeButton" class="home-button">
+            <button
+                id="homeButton"
+                class="home-button"
+                type="button"
+            >
                 🏠 الرئيسية
             </button>
 
         </div>
 
+
+
         <article class="details-card">
 
+
             <h2 id="detailsTitle"></h2>
+
 
             <div class="details-meta">
 
@@ -73,7 +180,47 @@
 
             </div>
 
+
+            <!-- =================================================
+                 إحصاءات الخبر
+                 ================================================= -->
+
+            <div class="details-statistics">
+
+                <span class="details-stat">
+
+                    👁
+
+                    <span id="detailsViews">
+                        0
+                    </span>
+
+                    مشاهدة
+
+                </span>
+
+
+                <span class="details-stat">
+
+                    📖
+
+                    <span id="detailsReads">
+                        0
+                    </span>
+
+                    قراءة
+
+                </span>
+
+            </div>
+
+
             <p id="detailsDescription"></p>
+
+
+            <!-- =================================================
+                 قراءة الخبر من المصدر
+                 ================================================= -->
 
             <a
                 id="sourceButton"
@@ -82,16 +229,29 @@
                 target="_blank"
                 rel="noopener noreferrer"
             >
-                قراءة الخبر من المصدر
+                📖 قراءة الخبر من المصدر
             </a>
+
 
         </article>
 
     </section>
 
+
 </div>
 
-<script src="app.js?v=11"></script>
+
+<!-- =========================================================
+     التطبيق
+     أصبح type="module" لأننا سنستخدم Firebase Modules
+     ========================================================= -->
+
+<script
+    type="module"
+    src="app.js?v=12"
+></script>
+
 
 </body>
+
 </html>
