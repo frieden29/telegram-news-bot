@@ -1,46 +1,225 @@
-const NEWS_URL = "./news.json";
+/* =========================================================
+   Firebase
+   ========================================================= */
 
-const STORAGE_KEY = "nabd-syria-news-cache-v2";
+import {
+    initializeApp
+} from "https://www.gstatic.com/firebasejs/12.18.0/firebase-app.js";
+
+import {
+    getDatabase,
+    ref,
+    onValue,
+    runTransaction
+} from "https://www.gstatic.com/firebasejs/12.18.0/firebase-database.js";
+
+
+const firebaseConfig = {
+
+    apiKey:
+        "AIzaSyDBN_qDkWhH4_ICPGxDLpQenRBBHWoGomk",
+
+    authDomain:
+        "nabd-syria-4a890.firebaseapp.com",
+
+    databaseURL:
+        "https://nabd-syria-4a890-default-rtdb.europe-west1.firebasedatabase.app",
+
+    projectId:
+        "nabd-syria-4a890",
+
+    storageBucket:
+        "nabd-syria-4a890.firebasestorage.app",
+
+    messagingSenderId:
+        "137822033129",
+
+    appId:
+        "1:137822033129:web:059e0e5ec1d335fec34c78",
+
+    measurementId:
+        "G-VLZW7ZYM2Y"
+};
+
+
+const firebaseApp =
+    initializeApp(
+        firebaseConfig
+    );
+
+
+const database =
+    getDatabase(
+        firebaseApp
+    );
+
+
+/* =========================================================
+   إعدادات الأخبار
+   ========================================================= */
+
+const NEWS_URL =
+    "./news.json";
+
+const STORAGE_KEY =
+    "nabd-syria-news-cache-v2";
+
+
+/* =========================================================
+   مفاتيح العدادات المحلية
+   ========================================================= */
+
+/*
+ * الزائر:
+ * يحسب مرة واحدة على هذا المتصفح.
+ */
+const VISITOR_STORAGE_KEY =
+    "nabd-syria-visitor-counted-v1";
+
+
+/*
+ * القراءة:
+ * يحتسب كل خبر مرة واحدة لكل متصفح.
+ */
+const READ_STORAGE_PREFIX =
+    "nabd-syria-read-";
+
+
+/*
+ * المشاهدة:
+ * تحتسب مرة واحدة لكل جلسة تصفح.
+ */
+const VIEW_SESSION_PREFIX =
+    "nabd-syria-view-";
+
+
+/* =========================================================
+   عناصر الصفحة
+   ========================================================= */
 
 const newsList =
-    document.getElementById("newsList");
+    document.getElementById(
+        "newsList"
+    );
+
 
 const loadingMessage =
-    document.getElementById("loadingMessage") ||
-    document.getElementById("loading");
+    document.getElementById(
+        "loadingMessage"
+    ) ||
+    document.getElementById(
+        "loading"
+    );
+
 
 const errorMessage =
-    document.getElementById("errorMessage") ||
-    document.getElementById("error");
+    document.getElementById(
+        "errorMessage"
+    ) ||
+    document.getElementById(
+        "error"
+    );
+
 
 const detailsScreen =
-    document.getElementById("detailsScreen");
+    document.getElementById(
+        "detailsScreen"
+    );
+
 
 const detailsTitle =
-    document.getElementById("detailsTitle");
+    document.getElementById(
+        "detailsTitle"
+    );
+
 
 const detailsDescription =
-    document.getElementById("detailsDescription");
+    document.getElementById(
+        "detailsDescription"
+    );
+
 
 const detailsSource =
-    document.getElementById("detailsSource");
+    document.getElementById(
+        "detailsSource"
+    );
+
 
 const detailsTime =
-    document.getElementById("detailsTime");
+    document.getElementById(
+        "detailsTime"
+    );
+
 
 const detailsLink =
-    document.getElementById("detailsLink") ||
-    document.querySelector(".source-button");
+    document.getElementById(
+        "sourceButton"
+    ) ||
+    document.getElementById(
+        "detailsLink"
+    ) ||
+    document.querySelector(
+        ".source-button"
+    );
+
 
 const homeButton =
-    document.getElementById("homeButton") ||
-    document.querySelector(".home-button");
+    document.getElementById(
+        "homeButton"
+    ) ||
+    document.querySelector(
+        ".home-button"
+    );
+
+
+const visitorCount =
+    document.getElementById(
+        "visitorCount"
+    );
+
+
+const detailsViews =
+    document.getElementById(
+        "detailsViews"
+    );
+
+
+const detailsReads =
+    document.getElementById(
+        "detailsReads"
+    );
+
 
 const header =
-    document.querySelector(".header");
+    document.querySelector(
+        ".header"
+    );
 
-let refreshButton = null;
-let currentDetailsUrl = "";
+
+/* =========================================================
+   متغيرات عامة
+   ========================================================= */
+
+let refreshButton =
+    null;
+
+
+let currentDetailsUrl =
+    "";
+
+
+let currentNewsId =
+    "";
+
+
+let latestStats = {
+    visitors: 0,
+    news: {}
+};
+
+
+let visibilityObserver =
+    null;
 
 
 /* =========================================================
@@ -53,10 +232,638 @@ function safeText(value) {
         value === null ||
         value === undefined
     ) {
+
         return "";
     }
 
-    return String(value).trim();
+
+    return String(
+        value
+    ).trim();
+}
+
+
+/* =========================================================
+   تنسيق الأرقام
+   ========================================================= */
+
+function formatNumber(value) {
+
+    const number =
+        Number(
+            value || 0
+        );
+
+
+    if (
+        !Number.isFinite(number) ||
+        number < 0
+    ) {
+
+        return "0";
+    }
+
+
+    try {
+
+        return new Intl.NumberFormat(
+            "ar"
+        ).format(
+            number
+        );
+
+    } catch (error) {
+
+        return String(
+            number
+        );
+    }
+}
+
+
+/* =========================================================
+   إنشاء رقم ثابت للخبر
+   ========================================================= */
+
+/*
+ * Firebase لا يسمح ببعض الرموز داخل أسماء المفاتيح.
+ *
+ * لذلك ننشئ ID قصيراً وثابتاً من:
+ *
+ * الرابط
+ * أو العنوان + وقت النشر
+ */
+
+function createNewsId(news) {
+
+    const sourceText =
+        safeText(
+            news.url
+        ) ||
+        (
+            safeText(news.title) +
+            "|" +
+            safeText(news.published_at) +
+            "|" +
+            safeText(news.source)
+        );
+
+
+    let hash =
+        2166136261;
+
+
+    for (
+        let i = 0;
+        i < sourceText.length;
+        i++
+    ) {
+
+        hash ^=
+            sourceText.charCodeAt(
+                i
+            );
+
+
+        hash =
+            Math.imul(
+                hash,
+                16777619
+            );
+    }
+
+
+    return (
+        "n" +
+        (
+            hash >>> 0
+        ).toString(16)
+    );
+}
+
+
+/* =========================================================
+   قراءة إحصاءات خبر
+   ========================================================= */
+
+function getNewsStats(newsId) {
+
+    const allNewsStats =
+        latestStats.news || {};
+
+
+    const newsStats =
+        allNewsStats[newsId] || {};
+
+
+    return {
+
+        views:
+            Number(
+                newsStats.views || 0
+            ),
+
+        reads:
+            Number(
+                newsStats.reads || 0
+            )
+    };
+}
+
+
+/* =========================================================
+   تحديث الأرقام الظاهرة
+   ========================================================= */
+
+function updateVisibleStatistics() {
+
+    /*
+     * عدد الزوار
+     */
+    if (visitorCount) {
+
+        visitorCount.textContent =
+            formatNumber(
+                latestStats.visitors
+            );
+    }
+
+
+    /*
+     * عدادات البطاقات
+     */
+    document
+        .querySelectorAll(
+            ".news-card[data-news-id]"
+        )
+        .forEach(
+            card => {
+
+                const newsId =
+                    card.dataset.newsId;
+
+
+                const stats =
+                    getNewsStats(
+                        newsId
+                    );
+
+
+                const viewsElement =
+                    card.querySelector(
+                        ".news-views-count"
+                    );
+
+
+                const readsElement =
+                    card.querySelector(
+                        ".news-reads-count"
+                    );
+
+
+                if (viewsElement) {
+
+                    viewsElement.textContent =
+                        formatNumber(
+                            stats.views
+                        );
+                }
+
+
+                if (readsElement) {
+
+                    readsElement.textContent =
+                        formatNumber(
+                            stats.reads
+                        );
+                }
+            }
+        );
+
+
+    /*
+     * عدادات صفحة التفاصيل
+     */
+    if (currentNewsId) {
+
+        const stats =
+            getNewsStats(
+                currentNewsId
+            );
+
+
+        if (detailsViews) {
+
+            detailsViews.textContent =
+                formatNumber(
+                    stats.views
+                );
+        }
+
+
+        if (detailsReads) {
+
+            detailsReads.textContent =
+                formatNumber(
+                    stats.reads
+                );
+        }
+    }
+}
+
+
+/* =========================================================
+   الاستماع لإحصاءات Firebase
+   ========================================================= */
+
+function listenForStatistics() {
+
+    const statsReference =
+        ref(
+            database,
+            "stats"
+        );
+
+
+    onValue(
+
+        statsReference,
+
+        snapshot => {
+
+            const value =
+                snapshot.val() || {};
+
+
+            latestStats = {
+
+                visitors:
+                    Number(
+                        value.visitors || 0
+                    ),
+
+                news:
+                    value.news || {}
+            };
+
+
+            updateVisibleStatistics();
+        },
+
+        error => {
+
+            console.warn(
+                "تعذر قراءة إحصاءات Firebase:",
+                error
+            );
+        }
+    );
+}
+
+
+/* =========================================================
+   زيادة عداد Firebase
+   ========================================================= */
+
+async function incrementCounter(
+    path
+) {
+
+    try {
+
+        const counterReference =
+            ref(
+                database,
+                path
+            );
+
+
+        const result =
+            await runTransaction(
+
+                counterReference,
+
+                currentValue => {
+
+                    const currentNumber =
+                        Number(
+                            currentValue || 0
+                        );
+
+
+                    if (
+                        !Number.isFinite(
+                            currentNumber
+                        ) ||
+                        currentNumber < 0
+                    ) {
+
+                        return 1;
+                    }
+
+
+                    return (
+                        currentNumber + 1
+                    );
+                }
+            );
+
+
+        return (
+            result.committed === true
+        );
+
+    } catch (error) {
+
+        console.warn(
+            "تعذر تحديث العداد:",
+            path,
+            error
+        );
+
+
+        return false;
+    }
+}
+
+
+/* =========================================================
+   عداد زوار نبض سوريا
+   ========================================================= */
+
+async function registerVisitor() {
+
+    try {
+
+        const alreadyCounted =
+            localStorage.getItem(
+                VISITOR_STORAGE_KEY
+            );
+
+
+        if (alreadyCounted) {
+
+            return;
+        }
+
+
+        const success =
+            await incrementCounter(
+                "stats/visitors"
+            );
+
+
+        /*
+         * لا نحفظ العلامة إلا بعد نجاح Firebase.
+         * إذا لم يتوفر الإنترنت سيحاول التطبيق مرة أخرى
+         * في المرة القادمة.
+         */
+        if (success) {
+
+            localStorage.setItem(
+                VISITOR_STORAGE_KEY,
+                "1"
+            );
+        }
+
+    } catch (error) {
+
+        console.warn(
+            "تعذر تسجيل الزائر:",
+            error
+        );
+    }
+}
+
+
+/* =========================================================
+   تسجيل مشاهدة خبر
+   ========================================================= */
+
+async function registerNewsView(
+    newsId
+) {
+
+    if (!newsId) {
+        return;
+    }
+
+
+    const storageKey =
+        VIEW_SESSION_PREFIX +
+        newsId;
+
+
+    try {
+
+        /*
+         * لا نكرر مشاهدة نفس الخبر
+         * خلال جلسة التصفح نفسها.
+         */
+        if (
+            sessionStorage.getItem(
+                storageKey
+            )
+        ) {
+
+            return;
+        }
+
+
+        const success =
+            await incrementCounter(
+                "stats/news/" +
+                newsId +
+                "/views"
+            );
+
+
+        if (success) {
+
+            sessionStorage.setItem(
+                storageKey,
+                "1"
+            );
+        }
+
+    } catch (error) {
+
+        console.warn(
+            "تعذر تسجيل مشاهدة الخبر:",
+            error
+        );
+    }
+}
+
+
+/* =========================================================
+   تسجيل قراءة خبر
+   ========================================================= */
+
+async function registerNewsRead(
+    newsId
+) {
+
+    if (!newsId) {
+        return;
+    }
+
+
+    const storageKey =
+        READ_STORAGE_PREFIX +
+        newsId;
+
+
+    try {
+
+        /*
+         * القراءة تحتسب مرة واحدة لهذا الخبر
+         * من هذا المتصفح.
+         */
+        if (
+            localStorage.getItem(
+                storageKey
+            )
+        ) {
+
+            return;
+        }
+
+
+        const success =
+            await incrementCounter(
+                "stats/news/" +
+                newsId +
+                "/reads"
+            );
+
+
+        if (success) {
+
+            localStorage.setItem(
+                storageKey,
+                "1"
+            );
+        }
+
+    } catch (error) {
+
+        console.warn(
+            "تعذر تسجيل قراءة الخبر:",
+            error
+        );
+    }
+}
+
+
+/* =========================================================
+   مراقبة ظهور الأخبار على الشاشة
+   ========================================================= */
+
+function createVisibilityObserver() {
+
+    if (
+        visibilityObserver
+    ) {
+
+        visibilityObserver.disconnect();
+
+        visibilityObserver =
+            null;
+    }
+
+
+    /*
+     * إذا كان المتصفح لا يدعم IntersectionObserver
+     * نحتسب الأخبار الظاهرة عند إنشائها.
+     */
+    if (
+        !(
+            "IntersectionObserver"
+            in window
+        )
+    ) {
+
+        document
+            .querySelectorAll(
+                ".news-card[data-news-id]"
+            )
+            .forEach(
+                card => {
+
+                    registerNewsView(
+                        card.dataset.newsId
+                    );
+                }
+            );
+
+
+        return;
+    }
+
+
+    visibilityObserver =
+        new IntersectionObserver(
+
+            entries => {
+
+                entries.forEach(
+                    entry => {
+
+                        /*
+                         * نحتسب المشاهدة عندما يظهر
+                         * نصف بطاقة الخبر تقريباً.
+                         */
+                        if (
+                            entry.isIntersecting &&
+                            entry.intersectionRatio >= 0.5
+                        ) {
+
+                            const card =
+                                entry.target;
+
+
+                            const newsId =
+                                card.dataset.newsId;
+
+
+                            registerNewsView(
+                                newsId
+                            );
+
+
+                            /*
+                             * بعد أول ظهور لا نحتاج
+                             * لمراقبة البطاقة مرة أخرى.
+                             */
+                            visibilityObserver.unobserve(
+                                card
+                            );
+                        }
+                    }
+                );
+            },
+
+            {
+                threshold: [
+                    0.5
+                ]
+            }
+        );
+
+
+    document
+        .querySelectorAll(
+            ".news-card[data-news-id]"
+        )
+        .forEach(
+            card => {
+
+                visibilityObserver.observe(
+                    card
+                );
+            }
+        );
 }
 
 
@@ -64,33 +871,59 @@ function safeText(value) {
    تنسيق وقت برلين
    ========================================================= */
 
-function formatBerlinTime(unixSeconds) {
+function formatBerlinTime(
+    unixSeconds
+) {
 
     const value =
-        Number(unixSeconds || 0);
+        Number(
+            unixSeconds || 0
+        );
+
 
     if (
         !Number.isFinite(value) ||
         value <= 0
     ) {
+
         return "";
     }
+
 
     try {
 
         return new Intl.DateTimeFormat(
+
             "de-DE",
+
             {
-                timeZone: "Europe/Berlin",
-                day: "2-digit",
-                month: "2-digit",
-                year: "numeric",
-                hour: "2-digit",
-                minute: "2-digit",
-                hour12: false
+                timeZone:
+                    "Europe/Berlin",
+
+                day:
+                    "2-digit",
+
+                month:
+                    "2-digit",
+
+                year:
+                    "numeric",
+
+                hour:
+                    "2-digit",
+
+                minute:
+                    "2-digit",
+
+                hour12:
+                    false
             }
+
         ).format(
-            new Date(value * 1000)
+
+            new Date(
+                value * 1000
+            )
         );
 
     } catch (error) {
@@ -99,6 +932,7 @@ function formatBerlinTime(unixSeconds) {
             "تعذر تحويل الوقت:",
             error
         );
+
 
         return "";
     }
@@ -112,40 +946,44 @@ function formatBerlinTime(unixSeconds) {
 function getNewsTime(news) {
 
     /*
-     * الأولوية فقط لوقت دخول الخبر إلى نبض سوريا.
-     * هذا هو الأقرب إلى وقت نشره على Telegram.
+     * الأولوية لوقت دخول الخبر
+     * إلى نبض سوريا.
      */
     const publishedAt =
         Number(
             news.published_at || 0
         );
 
+
     const publishedTime =
         formatBerlinTime(
             publishedAt
         );
 
+
     if (publishedTime) {
+
         return publishedTime;
     }
 
 
     /*
      * الأخبار القديمة التي سبقت published_at
-     * نعرض وقتها المخزن كما هو، لكن لا نستخدم
-     * timestamp الخاص بالمصدر لتصدر الأخبار.
      */
     const savedTime =
         safeText(
             news.time
         );
 
+
     if (
         savedTime &&
         savedTime !== "الآن"
     ) {
+
         return savedTime;
     }
+
 
     return "وقت النشر غير متوفر";
 }
@@ -162,12 +1000,19 @@ function getNewsImage(news) {
             news.image
         );
 
+
     if (
-        image.startsWith("https://") ||
-        image.startsWith("http://")
+        image.startsWith(
+            "https://"
+        ) ||
+        image.startsWith(
+            "http://"
+        )
     ) {
+
         return image;
     }
+
 
     return "";
 }
@@ -183,20 +1028,26 @@ function createNewsImage(
             news
         );
 
+
     if (!imageUrl) {
+
         return null;
     }
+
 
     const img =
         document.createElement(
             "img"
         );
 
+
     img.className =
         className;
 
+
     img.src =
         imageUrl;
+
 
     img.alt =
         safeText(
@@ -204,42 +1055,65 @@ function createNewsImage(
         ) ||
         "صورة الخبر";
 
+
     img.loading =
         "lazy";
+
 
     img.decoding =
         "async";
 
+
     img.addEventListener(
+
         "error",
+
         () => {
 
             img.remove();
         }
     );
 
+
     return img;
 }
 
 
 /* =========================================================
-   منع أخبار Archives القديمة من الظهور
+   منع أخبار Archives القديمة
    ========================================================= */
 
 function isArchiveNews(news) {
 
     const text =
         (
-            safeText(news.title) +
+            safeText(
+                news.title
+            ) +
             " " +
-            safeText(news.url)
+            safeText(
+                news.url
+            )
         ).toLowerCase();
 
+
     return (
-        text.includes("archive") ||
-        text.includes("archives") ||
-        text.includes("أرشيف") ||
-        text.includes("الأرشيف")
+
+        text.includes(
+            "archive"
+        ) ||
+
+        text.includes(
+            "archives"
+        ) ||
+
+        text.includes(
+            "أرشيف"
+        ) ||
+
+        text.includes(
+            "الأرشيف"
+        )
     );
 }
 
@@ -248,33 +1122,46 @@ function isArchiveNews(news) {
    ترتيب الأخبار
    ========================================================= */
 
-function sortNewsByTime(newsItems) {
+function sortNewsByTime(
+    newsItems
+) {
 
     return newsItems
+
         .map(
-            (news, index) => ({
+            (
+                news,
+                index
+            ) => ({
                 news,
                 index
             })
         )
+
         .sort(
-            (a, b) => {
+            (
+                a,
+                b
+            ) => {
 
                 const aPublished =
                     Number(
                         a.news.published_at || 0
                     );
 
+
                 const bPublished =
                     Number(
                         b.news.published_at || 0
                     );
+
 
                 const aHasPublished =
                     Number.isFinite(
                         aPublished
                     ) &&
                     aPublished > 0;
+
 
                 const bHasPublished =
                     Number.isFinite(
@@ -283,10 +1170,6 @@ function sortNewsByTime(newsItems) {
                     bPublished > 0;
 
 
-                /*
-                 * الأخبار الجديدة التي لديها published_at
-                 * ترتب حسب وقت دخولها إلى نبض سوريا.
-                 */
                 if (
                     aHasPublished &&
                     bHasPublished
@@ -299,29 +1182,25 @@ function sortNewsByTime(newsItems) {
                 }
 
 
-                /*
-                 * أي خبر جديد يأتي قبل الأخبار القديمة.
-                 */
                 if (aHasPublished) {
+
                     return -1;
                 }
 
+
                 if (bHasPublished) {
+
                     return 1;
                 }
 
 
-                /*
-                 * الأخبار القديمة التي لا تملك published_at
-                 * تبقى بترتيب news.json ولا نعتمد timestamp
-                 * الخاص بالمصدر.
-                 */
                 return (
                     a.index -
                     b.index
                 );
             }
         )
+
         .map(
             item =>
                 item.news
@@ -336,18 +1215,22 @@ function sortNewsByTime(newsItems) {
 function createRefreshButton() {
 
     if (!header) {
+
         return;
     }
+
 
     const oldButton =
         document.getElementById(
             "refreshNewsButton"
         );
 
+
     if (oldButton) {
 
         refreshButton =
             oldButton;
+
 
         return;
     }
@@ -358,6 +1241,7 @@ function createRefreshButton() {
             "div"
         );
 
+
     actions.className =
         "header-actions";
 
@@ -367,21 +1251,27 @@ function createRefreshButton() {
             "button"
         );
 
+
     refreshButton.id =
         "refreshNewsButton";
+
 
     refreshButton.className =
         "refresh-button";
 
+
     refreshButton.type =
         "button";
+
 
     refreshButton.innerHTML =
         '<span class="refresh-icon">↻</span> تحديث الأخبار';
 
 
     refreshButton.addEventListener(
+
         "click",
+
         () => {
 
             loadNews(
@@ -394,6 +1284,7 @@ function createRefreshButton() {
     actions.appendChild(
         refreshButton
     );
+
 
     header.appendChild(
         actions
@@ -410,11 +1301,14 @@ function setRefreshLoading(
 ) {
 
     if (!refreshButton) {
+
         return;
     }
 
+
     refreshButton.disabled =
         isLoading;
+
 
     if (isLoading) {
 
@@ -438,12 +1332,18 @@ function showHome() {
     currentDetailsUrl =
         "";
 
+
+    currentNewsId =
+        "";
+
+
     if (header) {
 
         header.classList.remove(
             "hidden"
         );
     }
+
 
     if (newsList) {
 
@@ -452,12 +1352,14 @@ function showHome() {
         );
     }
 
+
     if (detailsScreen) {
 
         detailsScreen.classList.add(
             "hidden"
         );
     }
+
 
     window.scrollTo(
         0,
@@ -477,21 +1379,23 @@ function openExternalSource(url) {
             url
         );
 
+
     if (
         !safeUrl ||
         (
-            !safeUrl.startsWith("https://") &&
-            !safeUrl.startsWith("http://")
+            !safeUrl.startsWith(
+                "https://"
+            ) &&
+            !safeUrl.startsWith(
+                "http://"
+            )
         )
     ) {
+
         return;
     }
 
 
-    /*
-     * لا نستخدم window.open.
-     * نوجّه الرابط الخارجي مباشرة.
-     */
     window.location.href =
         safeUrl;
 }
@@ -504,8 +1408,15 @@ function openExternalSource(url) {
 function showDetails(news) {
 
     if (!detailsScreen) {
+
         return;
     }
+
+
+    currentNewsId =
+        createNewsId(
+            news
+        );
 
 
     if (detailsTitle) {
@@ -524,11 +1435,15 @@ function showDetails(news) {
                 news.description
             );
 
+
         detailsDescription.textContent =
             description;
 
+
         detailsDescription.classList.toggle(
+
             "hidden",
+
             !description
         );
     }
@@ -552,6 +1467,33 @@ function showDetails(news) {
     }
 
 
+    /*
+     * عرض إحصاءات الخبر
+     */
+    const stats =
+        getNewsStats(
+            currentNewsId
+        );
+
+
+    if (detailsViews) {
+
+        detailsViews.textContent =
+            formatNumber(
+                stats.views
+            );
+    }
+
+
+    if (detailsReads) {
+
+        detailsReads.textContent =
+            formatNumber(
+                stats.reads
+            );
+    }
+
+
     currentDetailsUrl =
         safeText(
             news.url
@@ -561,15 +1503,20 @@ function showDetails(news) {
     if (detailsLink) {
 
         const hasValidUrl =
+
             currentDetailsUrl.startsWith(
                 "https://"
             ) ||
+
             currentDetailsUrl.startsWith(
                 "http://"
             );
 
+
         detailsLink.classList.toggle(
+
             "hidden",
+
             !hasValidUrl
         );
 
@@ -581,10 +1528,12 @@ function showDetails(news) {
                 currentDetailsUrl
             );
 
+
             detailsLink.setAttribute(
                 "target",
                 "_self"
             );
+
 
             detailsLink.setAttribute(
                 "rel",
@@ -612,6 +1561,7 @@ function showDetails(news) {
             detailsCard.querySelector(
                 ".details-image"
             );
+
 
         if (oldImage) {
 
@@ -665,13 +1615,127 @@ function showDetails(news) {
 
 
 /* =========================================================
+   إنشاء سطر الإحصاءات داخل بطاقة الخبر
+   ========================================================= */
+
+function createNewsStatistics(
+    newsId
+) {
+
+    const statistics =
+        document.createElement(
+            "div"
+        );
+
+
+    statistics.className =
+        "news-statistics";
+
+
+    /*
+     * المشاهدات
+     */
+    const views =
+        document.createElement(
+            "span"
+        );
+
+
+    views.className =
+        "news-stat";
+
+
+    views.innerHTML =
+        '👁 <span class="news-views-count">0</span> مشاهدة';
+
+
+    /*
+     * القراءات
+     */
+    const reads =
+        document.createElement(
+            "span"
+        );
+
+
+    reads.className =
+        "news-stat";
+
+
+    reads.innerHTML =
+        '📖 <span class="news-reads-count">0</span> قراءة';
+
+
+    statistics.appendChild(
+        views
+    );
+
+
+    statistics.appendChild(
+        reads
+    );
+
+
+    const stats =
+        getNewsStats(
+            newsId
+        );
+
+
+    const viewsCount =
+        statistics.querySelector(
+            ".news-views-count"
+        );
+
+
+    const readsCount =
+        statistics.querySelector(
+            ".news-reads-count"
+        );
+
+
+    if (viewsCount) {
+
+        viewsCount.textContent =
+            formatNumber(
+                stats.views
+            );
+    }
+
+
+    if (readsCount) {
+
+        readsCount.textContent =
+            formatNumber(
+                stats.reads
+            );
+    }
+
+
+    return statistics;
+}
+
+
+/* =========================================================
    عرض الأخبار
    ========================================================= */
 
-function renderNews(newsItems) {
+function renderNews(
+    newsItems
+) {
 
     if (!newsList) {
+
         return;
+    }
+
+
+    if (visibilityObserver) {
+
+        visibilityObserver.disconnect();
+
+        visibilityObserver =
+            null;
     }
 
 
@@ -680,12 +1744,15 @@ function renderNews(newsItems) {
 
 
     if (
-        !Array.isArray(newsItems) ||
+        !Array.isArray(
+            newsItems
+        ) ||
         newsItems.length === 0
     ) {
 
         newsList.innerHTML =
             '<div class="message">لا توجد أخبار متاحة حالياً.</div>';
+
 
         return;
     }
@@ -704,7 +1771,7 @@ function renderNews(newsItems) {
 
 
     /*
-     * ترتيب الأخبار حسب published_at.
+     * ترتيب الأخبار.
      */
     const sortedNews =
         sortNewsByTime(
@@ -715,19 +1782,31 @@ function renderNews(newsItems) {
     sortedNews.forEach(
         news => {
 
+            const newsId =
+                createNewsId(
+                    news
+                );
+
+
             const card =
                 document.createElement(
                     "article"
                 );
 
+
             card.className =
                 "news-card";
+
+
+            card.dataset.newsId =
+                newsId;
 
 
             const mainRow =
                 document.createElement(
                     "div"
                 );
+
 
             mainRow.className =
                 "news-main-row";
@@ -738,6 +1817,7 @@ function renderNews(newsItems) {
                     "div"
                 );
 
+
             textArea.className =
                 "news-text-area";
 
@@ -747,8 +1827,10 @@ function renderNews(newsItems) {
                     "h2"
                 );
 
+
             title.className =
                 "news-title";
+
 
             title.textContent =
                 safeText(
@@ -774,8 +1856,10 @@ function renderNews(newsItems) {
                         "p"
                     );
 
+
                 description.className =
                     "news-description";
+
 
                 description.textContent =
                     descriptionText;
@@ -812,10 +1896,14 @@ function renderNews(newsItems) {
             );
 
 
+            /*
+             * المصدر والوقت
+             */
             const meta =
                 document.createElement(
                     "div"
                 );
+
 
             meta.className =
                 "news-meta";
@@ -826,8 +1914,10 @@ function renderNews(newsItems) {
                     "span"
                 );
 
+
             source.className =
                 "news-source";
+
 
             source.textContent =
                 safeText(
@@ -840,8 +1930,10 @@ function renderNews(newsItems) {
                     "span"
                 );
 
+
             time.className =
                 "news-time";
+
 
             time.textContent =
                 getNewsTime(
@@ -853,6 +1945,7 @@ function renderNews(newsItems) {
                 source
             );
 
+
             meta.appendChild(
                 time
             );
@@ -863,8 +1956,27 @@ function renderNews(newsItems) {
             );
 
 
+            /*
+             * المشاهدات والقراءات
+             */
+            const statistics =
+                createNewsStatistics(
+                    newsId
+                );
+
+
+            card.appendChild(
+                statistics
+            );
+
+
+            /*
+             * فتح صفحة التفاصيل
+             */
             card.addEventListener(
+
                 "click",
+
                 () => {
 
                     showDetails(
@@ -879,6 +1991,19 @@ function renderNews(newsItems) {
             );
         }
     );
+
+
+    /*
+     * تحديث الأرقام الموجودة
+     * من آخر بيانات Firebase.
+     */
+    updateVisibleStatistics();
+
+
+    /*
+     * بدء مراقبة ظهور الأخبار.
+     */
+    createVisibilityObserver();
 }
 
 
@@ -909,13 +2034,14 @@ function getSavedNews() {
 
 
         if (
-            Array.isArray(data) &&
+            Array.isArray(
+                data
+            ) &&
             data.length > 0
         ) {
 
             return data;
         }
-
 
     } catch (error) {
 
@@ -965,8 +2091,8 @@ async function loadNews(
 
 
     /*
-     * إظهار عبارة "جاري تحميل الأخبار..."
-     * فقط عندما لا توجد نسخة محفوظة.
+     * إظهار جاري التحميل فقط
+     * إذا لم توجد نسخة محفوظة.
      */
     if (
         !savedNews &&
@@ -981,8 +2107,7 @@ async function loadNews(
 
 
     /*
-     * عند الضغط على زر التحديث
-     * نغيّر حالة الزر فقط.
+     * تحديث يدوي.
      */
     if (manualRefresh) {
 
@@ -992,10 +2117,6 @@ async function loadNews(
     }
 
 
-    /*
-     * إخفاء رسالة الخطأ القديمة
-     * قبل محاولة التحميل الجديدة.
-     */
     if (errorMessage) {
 
         errorMessage.classList.add(
@@ -1014,38 +2135,40 @@ async function loadNews(
             new AbortController();
 
 
-        /*
-         * إلغاء الطلب إذا استغرق أكثر من 8 ثوانٍ.
-         */
         timeout =
             setTimeout(
+
                 () => {
 
                     controller.abort();
                 },
+
                 8000
             );
 
 
         const separator =
-            NEWS_URL.includes("?")
-            ? "&"
-            : "?";
+            NEWS_URL.includes(
+                "?"
+            )
+                ? "&"
+                : "?";
 
 
-        /*
-         * إضافة الوقت تمنع المتصفح من إعادة
-         * استخدام نسخة news.json قديمة.
-         */
         const response =
             await fetch(
+
                 NEWS_URL +
                 separator +
                 "t=" +
                 Date.now(),
+
                 {
-                    cache: "no-store",
-                    signal: controller.signal
+                    cache:
+                        "no-store",
+
+                    signal:
+                        controller.signal
                 }
             );
 
@@ -1063,7 +2186,11 @@ async function loadNews(
             await response.json();
 
 
-        if (!Array.isArray(data)) {
+        if (
+            !Array.isArray(
+                data
+            )
+        ) {
 
             throw new Error(
                 "news.json غير صالح"
@@ -1080,13 +2207,14 @@ async function loadNews(
 
 
         /*
-         * حفظ نسخة من الأخبار للاستخدام
-         * السريع عند فتح التطبيق لاحقاً.
+         * حفظ الأخبار.
          */
         try {
 
             localStorage.setItem(
+
                 STORAGE_KEY,
+
                 JSON.stringify(
                     data
                 )
@@ -1100,7 +2228,6 @@ async function loadNews(
             );
         }
 
-
     } catch (error) {
 
         console.warn(
@@ -1109,10 +2236,6 @@ async function loadNews(
         );
 
 
-        /*
-         * لا نظهر رسالة خطأ إذا كانت لدينا
-         * أخبار محفوظة معروضة بالفعل.
-         */
         if (
             !savedNews &&
             errorMessage
@@ -1121,17 +2244,14 @@ async function loadNews(
             errorMessage.textContent =
                 "تعذر تحميل الأخبار. حاول الضغط على تحديث الأخبار.";
 
+
             errorMessage.classList.remove(
                 "hidden"
             );
         }
 
-
     } finally {
 
-        /*
-         * إلغاء مؤقت انتهاء المهلة.
-         */
         if (timeout) {
 
             clearTimeout(
@@ -1140,13 +2260,6 @@ async function loadNews(
         }
 
 
-        /*
-         * أهم جزء:
-         *
-         * تختفي عبارة "جاري تحميل الأخبار..."
-         * دائماً بعد انتهاء عملية التحميل،
-         * سواء نجحت أو فشلت.
-         */
         if (loadingMessage) {
 
             loadingMessage.classList.add(
@@ -1155,10 +2268,6 @@ async function loadNews(
         }
 
 
-        /*
-         * إعادة زر تحديث الأخبار
-         * إلى حالته الطبيعية.
-         */
         setRefreshLoading(
             false
         );
@@ -1173,10 +2282,13 @@ async function loadNews(
 if (homeButton) {
 
     homeButton.addEventListener(
+
         "click",
+
         event => {
 
             event.preventDefault();
+
 
             showHome();
         }
@@ -1191,13 +2303,30 @@ if (homeButton) {
 if (detailsLink) {
 
     detailsLink.addEventListener(
+
         "click",
-        event => {
+
+        async event => {
 
             event.preventDefault();
 
             event.stopPropagation();
 
+
+            /*
+             * نسجل القراءة أولاً.
+             */
+            if (currentNewsId) {
+
+                await registerNewsRead(
+                    currentNewsId
+                );
+            }
+
+
+            /*
+             * ثم نفتح المصدر.
+             */
             openExternalSource(
                 currentDetailsUrl
             );
@@ -1211,7 +2340,9 @@ if (detailsLink) {
    ========================================================= */
 
 document.addEventListener(
+
     "DOMContentLoaded",
+
     () => {
 
         /*
@@ -1224,6 +2355,18 @@ document.addEventListener(
          * إظهار الصفحة الرئيسية.
          */
         showHome();
+
+
+        /*
+         * الاستماع لأرقام Firebase.
+         */
+        listenForStatistics();
+
+
+        /*
+         * تسجيل الزائر.
+         */
+        registerVisitor();
 
 
         /*
@@ -1246,7 +2389,9 @@ if (
 ) {
 
     window.addEventListener(
+
         "load",
+
         () => {
 
             navigator
@@ -1254,15 +2399,14 @@ if (
                 .register(
                     "./sw.js"
                 )
+
                 .then(
                     registration => {
 
-                        /*
-                         * طلب التحقق من وجود إصدار جديد.
-                         */
                         registration.update();
                     }
                 )
+
                 .catch(
                     error => {
 
