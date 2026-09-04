@@ -570,3 +570,176 @@ body {
 .header-text p {
   margin: 4px 0 0;
 }
+/* =========================================================
+   إحصاءات نبض سوريا - Firebase
+   ========================================================= */
+
+
+/* ---------------------------------------------------------
+   عدد زوار نبض سوريا
+   --------------------------------------------------------- */
+
+.visitor-stats {
+    margin-top: 8px;
+
+    display: flex;
+    align-items: center;
+
+    gap: 5px;
+
+    color: #666666;
+
+    font-size: 13px;
+
+    line-height: 1.4;
+}
+
+.visitor-stats strong {
+    color: #222222;
+
+    font-weight: 800;
+}
+
+.visitor-icon {
+    font-size: 14px;
+}
+
+
+/* ---------------------------------------------------------
+   مشاهدات وقراءات الخبر
+   --------------------------------------------------------- */
+
+.news-statistics {
+    margin-top: 10px;
+
+    padding-top: 9px;
+
+    border-top: 1px solid #e5e5e5;
+
+    display: flex;
+
+    align-items: center;
+
+    justify-content: flex-start;
+
+    gap: 16px;
+
+    direction: rtl;
+
+    color: #666666;
+
+    font-size: 12.5px;
+}
+
+.news-stat {
+    display: inline-flex;
+
+    align-items: center;
+
+    gap: 4px;
+
+    white-space: nowrap;
+}
+
+.news-views-count,
+.news-reads-count {
+    color: #333333;
+
+    font-weight: 700;
+}
+
+
+/* ---------------------------------------------------------
+   الإحصاءات داخل صفحة تفاصيل الخبر
+   --------------------------------------------------------- */
+
+.details-statistics {
+    margin-top: 14px;
+
+    padding: 11px 0;
+
+    border-top: 1px solid #eeeeee;
+
+    border-bottom: 1px solid #eeeeee;
+
+    display: flex;
+
+    align-items: center;
+
+    gap: 20px;
+
+    color: #666666;
+
+    font-size: 14px;
+}
+
+.details-stat {
+    display: inline-flex;
+
+    align-items: center;
+
+    gap: 5px;
+}
+
+#detailsViews,
+#detailsReads {
+    color: #222222;
+
+    font-weight: 800;
+}
+
+
+/* =========================================================
+   الهاتف
+   ========================================================= */
+
+@media (max-width: 560px) {
+
+    .visitor-stats {
+        margin-top: 6px;
+
+        font-size: 11.5px;
+
+        gap: 4px;
+    }
+
+    .visitor-icon {
+        font-size: 13px;
+    }
+
+    .news-statistics {
+        margin-top: 8px;
+
+        padding-top: 8px;
+
+        gap: 13px;
+
+        font-size: 11.5px;
+    }
+
+    .details-statistics {
+        margin-top: 12px;
+
+        gap: 16px;
+
+        font-size: 13px;
+    }
+}
+
+
+/* =========================================================
+   شاشات iPhone الصغيرة
+   ========================================================= */
+
+@media (max-width: 390px) {
+
+    .news-statistics {
+        gap: 10px;
+
+        font-size: 11px;
+    }
+
+    .visitor-stats {
+        font-size: 11px;
+    }
+}
