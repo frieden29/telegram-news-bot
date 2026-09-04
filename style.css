@@ -743,3 +743,59 @@ body {
         font-size: 11px;
     }
 }
+/* =========================================================
+   زر تحديث الأخبار بألوان العلم السوري
+   ========================================================= */
+
+.refresh-button {
+    position: relative;
+    overflow: hidden;
+
+    color: #111;
+
+    background:
+        linear-gradient(
+            to bottom,
+            #007a3d 0%,
+            #007a3d 33.33%,
+            #ffffff 33.33%,
+            #ffffff 66.66%,
+            #000000 66.66%,
+            #000000 100%
+        );
+
+    border: 1px solid rgba(0, 0, 0, 0.15);
+
+    text-shadow:
+        0 1px 2px rgba(255, 255, 255, 0.9);
+}
+
+/* النجوم الحمراء في الشريط الأبيض */
+.refresh-button::before {
+    content: "★ ★ ★";
+
+    position: absolute;
+
+    left: 50%;
+    top: 50%;
+
+    transform: translate(-50%, -50%);
+
+    color: #ce1126;
+
+    font-size: 10px;
+
+    letter-spacing: 2px;
+
+    white-space: nowrap;
+
+    pointer-events: none;
+}
+
+/* إبقاء النص ورمز التحديث ظاهرين فوق العلم */
+.refresh-button span,
+.refresh-button .refresh-icon {
+    position: relative;
+
+    z-index: 2;
+}
