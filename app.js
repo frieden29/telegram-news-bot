@@ -202,6 +202,30 @@ const header =
 
 let refreshButton =
     null;
+    /*
+ * طريقة ترتيب الأخبار:
+ * latest = الأحدث أولاً
+ * reads  = الأكثر قراءة
+ */
+let currentSortMode =
+    "latest";
+
+
+/*
+ * آخر قائمة أخبار تم تحميلها.
+ * نحتفظ بها لكي نستطيع إعادة ترتيبها
+ * دون إعادة تحميل news.json.
+ */
+let currentNewsItems =
+    [];
+
+
+let mostReadButton =
+    null;
+
+
+let latestNewsButton =
+    null;
 
 
 let currentDetailsUrl =
@@ -1206,8 +1230,266 @@ function sortNewsByTime(
                 item.news
         );
 }
+/* =========================================================
+   ترتيب الأخبار حسب عدد القراءات
+   ========================================================= */
+
+function sortNewsByReads(
+    newsItems
+) {
+
+    return newsItems
+
+        .map(
+            (
+                news,
+                index
+            ) => {
+
+                const newsId =
+                    createNewsId(
+                        news
+                    );
 
 
+                const stats =
+                    getNewsStats(
+                        newsId
+                    );
+
+
+                return {
+                    news,
+                    index,
+                    reads:
+                        Number(
+                            stats.reads || 0
+                        )
+                };
+            }
+        )
+
+        .sort(
+            (
+                a,
+                b
+            ) => {
+
+                /*
+                 * الأكثر قراءة أولاً.
+                 */
+                if (
+                    b.reads !==
+                    a.reads
+                ) {
+
+                    return (
+                        b.reads -
+                        a.reads
+                    );
+                }
+
+
+                /*
+                 * إذا تساوى عدد القراءات،
+                 * نضع الخبر الأحدث أولاً.
+                 */
+                const aPublished =
+                    Number(
+                        a.news.published_at || 0
+                    );
+
+
+                const bPublished =
+                    Number(
+                        b.news.published_at || 0
+                    );
+
+
+                if (
+                    aPublished !==
+                    bPublished
+                ) {
+
+                    return (
+                        bPublished -
+                        aPublished
+                    );
+                }
+
+
+                return (
+                    a.index -
+                    b.index
+                );
+            }
+        )
+
+        .map(
+            item =>
+                item.news
+        );
+}
+/* =========================================================
+   أزرار ترتيب الأخبار
+   ========================================================= */
+
+function createSortButtons() {
+
+    if (!header) {
+
+        return;
+    }
+
+
+    let actions =
+        header.querySelector(
+            ".header-actions"
+        );
+
+
+    if (!actions) {
+
+        actions =
+            document.createElement(
+                "div"
+            );
+
+
+        actions.className =
+            "header-actions";
+
+
+        header.appendChild(
+            actions
+        );
+    }
+
+
+    mostReadButton =
+        document.createElement(
+            "button"
+        );
+
+
+    mostReadButton.id =
+        "mostReadButton";
+
+
+    mostReadButton.className =
+        "sort-button";
+
+
+    mostReadButton.type =
+        "button";
+
+
+    mostReadButton.innerHTML =
+        "📖 الأكثر قراءة";
+
+
+    mostReadButton.addEventListener(
+
+        "click",
+
+        () => {
+
+            currentSortMode =
+                "reads";
+
+
+            updateSortButtons();
+
+
+            renderNews(
+                currentNewsItems
+            );
+        }
+    );
+
+
+    latestNewsButton =
+        document.createElement(
+            "button"
+        );
+
+
+    latestNewsButton.id =
+        "latestNewsButton";
+
+
+    latestNewsButton.className =
+        "sort-button active";
+
+
+    latestNewsButton.type =
+        "button";
+
+
+    latestNewsButton.innerHTML =
+        "🕒 الأحدث أولاً";
+
+
+    latestNewsButton.addEventListener(
+
+        "click",
+
+        () => {
+
+            currentSortMode =
+                "latest";
+
+
+            updateSortButtons();
+
+
+            renderNews(
+                currentNewsItems
+            );
+        }
+    );
+
+
+    actions.appendChild(
+        mostReadButton
+    );
+
+
+    actions.appendChild(
+        latestNewsButton
+    );
+}
+
+
+/* =========================================================
+   تحديث شكل زر الترتيب المختار
+   ========================================================= */
+
+function updateSortButtons() {
+
+    if (mostReadButton) {
+
+        mostReadButton.classList.toggle(
+
+            "active",
+
+            currentSortMode ===
+            "reads"
+        );
+    }
+
+
+    if (latestNewsButton) {
+
+        latestNewsButton.classList.toggle(
+
+            "active",
+
+            currentSortMode ===
+            "latest"
+        );
+    }
+}
 /* =========================================================
    زر تحديث الأخبار
    ========================================================= */
@@ -1729,7 +2011,11 @@ function renderNews(
         return;
     }
 
-
+/*
+ * حفظ آخر قائمة أخبار تم تحميلها.
+ */
+currentNewsItems =
+    newsItems;
     if (visibilityObserver) {
 
         visibilityObserver.disconnect();
@@ -1774,7 +2060,15 @@ function renderNews(
      * ترتيب الأخبار.
      */
     const sortedNews =
-        sortNewsByTime(
+
+    currentSortMode ===
+    "reads"
+
+        ? sortNewsByReads(
+            cleanNews
+        )
+
+        : sortNewsByTime(
             cleanNews
         );
 
@@ -2349,7 +2643,10 @@ document.addEventListener(
          * إنشاء زر التحديث.
          */
         createRefreshButton();
-
+/*
+ * إنشاء أزرار ترتيب الأخبار.
+ */
+createSortButtons();
 
         /*
          * إظهار الصفحة الرئيسية.
