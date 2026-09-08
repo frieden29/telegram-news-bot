@@ -177,7 +177,15 @@ NEWS_FILE = os.path.join(
     BASE_DIR,
     "news.json"
 )
+# ملف انتظار الأخبار التي فشل نشرها على Facebook
+FACEBOOK_PENDING_FILE = os.path.join(
+    BASE_DIR,
+    "facebook_pending.json"
+)
 
+# عدد الأخبار المعلقة التي نحاول إعادة نشرها
+# في كل تشغيل للبوت.
+FACEBOOK_PENDING_PER_RUN = 1
 MAX_APP_NEWS = 200
 BERLIN_TZ = ZoneInfo("Europe/Berlin")
 
@@ -2570,7 +2578,99 @@ def send_to_facebook(
         f"Facebook API: {error_message}"
     )
 
+# =========================================================
+# قائمة انتظار Facebook
+# =========================================================
 
+def load_facebook_pending():
+
+    if not os.path.exists(
+        FACEBOOK_PENDING_FILE
+    ):
+        return []
+
+    try:
+
+        with open(
+            FACEBOOK_PENDING_FILE,
+            "r",
+            encoding="utf-8"
+        ) as file:
+
+            data = json.load(file)
+
+            if isinstance(data, list):
+                return data
+
+    except Exception as e:
+
+        print(
+            "⚠️ تعذر قراءة قائمة انتظار Facebook:",
+            e
+        )
+
+    return []
+
+
+def save_facebook_pending(
+    pending
+):
+
+    with open(
+        FACEBOOK_PENDING_FILE,
+        "w",
+        encoding="utf-8"
+    ) as file:
+
+        json.dump(
+            pending,
+            file,
+            ensure_ascii=False,
+            indent=2
+        )
+
+
+def add_to_facebook_pending(
+    story
+):
+
+    pending = load_facebook_pending()
+
+    story_link = clean_link(
+        story.get(
+            "link",
+            ""
+        )
+    )
+
+    # منع إضافة الخبر نفسه أكثر من مرة.
+    for old_story in pending:
+
+        old_link = clean_link(
+            old_story.get(
+                "link",
+                ""
+            )
+        )
+
+        if (
+            story_link
+            and old_link
+            and story_link == old_link
+        ):
+            return
+
+    pending.append(
+        story.copy()
+    )
+
+    save_facebook_pending(
+        pending
+    )
+
+    print(
+        "📥 تم حفظ الخبر في قائمة انتظار Facebook"
+    )
 
 # =========================================================
 # نشر الخبر
@@ -2662,11 +2762,13 @@ def publish_story(
 
         print(e)
 
+        add_to_facebook_pending(
+            story
+        )
 
     # نحفظ الخبر إذا نجح النشر على منصة واحدة على الأقل.
     # هذا يمنع ضياع الخبر بالكامل إذا تعطل أحد الطرفين.
     if telegram_ok or facebook_ok:
-
         # وقت دخول الخبر إلى نبض سوريا.
         story["published_at"] = int(
             time.time()
@@ -2773,7 +2875,89 @@ def process_source(
         published
     )
 
+# =========================================================
+# إعادة محاولة أخبار Facebook المعلقة
+# =========================================================
 
+def retry_facebook_pending():
+
+    pending = load_facebook_pending()
+
+    if not pending:
+
+        print(
+            "📭 لا توجد أخبار معلقة لـ Facebook"
+        )
+
+        return
+
+
+    print(
+        "📤 أخبار Facebook المعلقة:",
+        len(pending)
+    )
+
+
+    remaining = list(
+        pending
+    )
+
+
+    attempts = min(
+        FACEBOOK_PENDING_PER_RUN,
+        len(pending)
+    )
+
+
+    for story in pending[:attempts]:
+
+        try:
+
+            facebook_ok, facebook_post_id = (
+                send_to_facebook(
+                    story
+                )
+            )
+
+
+            if facebook_ok:
+
+                print(
+                    "✅ تم نشر خبر معلق على Facebook"
+                )
+
+                print(
+                    "🆔 Facebook Post ID:",
+                    facebook_post_id
+                )
+
+
+                if story in remaining:
+
+                    remaining.remove(
+                        story
+                    )
+
+
+            else:
+
+                print(
+                    "⚠️ لم ينجح نشر الخبر المعلق على Facebook"
+                )
+
+
+        except Exception as e:
+
+            print(
+                "❌ فشلت إعادة محاولة Facebook:"
+            )
+
+            print(e)
+
+
+    save_facebook_pending(
+        remaining
+    )
 # =========================================================
 # التشغيل
 # =========================================================
@@ -2785,7 +2969,8 @@ print("=" * 75)
 
 
 published = load_published()
-
+# محاولة نشر خبر واحد من أخبار Facebook المعلقة.
+retry_facebook_pending()
 
 print(
     "📚 سجل منع التكرار:",
