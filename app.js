@@ -1805,7 +1805,7 @@ function createRefreshButton() {
 
 
     refreshButton.innerHTML =
-        '<span class="refresh-icon">↻</span> تحديث الأخبار';
+    '<img class="refresh-logo" src="refresh-sy.png" alt=""> <span>تحديث الأخبار</span>';
 
 
     refreshButton.addEventListener(
@@ -1857,9 +1857,9 @@ function setRefreshLoading(
 
     } else {
 
-        refreshButton.innerHTML =
-            '<span class="refresh-icon">↻</span> تحديث الأخبار';
-    }
+    refreshButton.innerHTML =
+        '<img class="refresh-logo" src="refresh-sy.png" alt=""> <span>تحديث الأخبار</span>';
+}
 }
 
 
