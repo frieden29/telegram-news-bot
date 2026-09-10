@@ -2391,18 +2391,36 @@ function renderNews(
     /*
      * ترتيب الأخبار.
      */
-    const sortedNews =
+    let sortedNews;
 
-        currentSortMode ===
-        "reads"
 
-            ? sortNewsByReads(
-                cleanNews
-            )
+if (
+    currentSortMode ===
+    "reads"
+) {
 
-            : sortNewsByTime(
-                cleanNews
-            );
+    sortedNews =
+        sortNewsByReads(
+            cleanNews
+        );
+
+} else if (
+    currentSortMode ===
+    "details"
+) {
+
+    sortedNews =
+        sortNewsByDetails(
+            cleanNews
+        );
+
+} else {
+
+    sortedNews =
+        sortNewsByTime(
+            cleanNews
+        );
+}
 
 
     sortedNews.forEach(
