@@ -882,6 +882,10 @@ body {
     height: 34px;
     object-fit: contain;
     flex-shrink: 0;
+
+    display: block;
+    position: relative;
+    z-index: 2;
 }
 
 .refresh-button {
