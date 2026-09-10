@@ -1031,9 +1031,9 @@ app_cutoff = (
     )
 
     # الخبر الجديد أولاً.
-for item in [new_item] + current:
+    for item in [new_item] + current:
 
-         if not isinstance(item, dict):
+        if not isinstance(item, dict):
             continue
 
         # حذف الأخبار التي بقيت في التطبيق أكثر من المدة المحددة.
@@ -1064,6 +1064,7 @@ for item in [new_item] + current:
             )
         ):
             continue
+
 
         if (
             item_link
