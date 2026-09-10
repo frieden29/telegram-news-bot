@@ -1725,18 +1725,6 @@ function createSortButtons() {
 }
 function updateSortButtons() {
 
-    if (mostReadButton) {
-
-        mostReadButton.classList.toggle(
-
-            "active",
-
-            currentSortMode ===
-            "reads"
-        );
-    }
-
-
     if (latestNewsButton) {
 
         latestNewsButton.classList.toggle(
@@ -1745,6 +1733,30 @@ function updateSortButtons() {
 
             currentSortMode ===
             "latest"
+        );
+    }
+
+
+    if (mostDetailsButton) {
+
+        mostDetailsButton.classList.toggle(
+
+            "active",
+
+            currentSortMode ===
+            "details"
+        );
+    }
+
+
+    if (mostReadButton) {
+
+        mostReadButton.classList.toggle(
+
+            "active",
+
+            currentSortMode ===
+            "reads"
         );
     }
 }
