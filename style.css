@@ -805,3 +805,71 @@ body {
 
     z-index: 2;
 }
+/* =========================================================
+   أزرار ترتيب الأخبار الثلاثة
+   ========================================================= */
+
+.sort-buttons-container {
+    display: flex;
+    flex-direction: column;
+    gap: 7px;
+    width: 100%;
+}
+
+
+/* الشكل العام للأزرار */
+.sort-buttons-container .sort-button {
+    width: 100%;
+    min-height: 38px;
+    padding: 8px 14px;
+    border-radius: 9px;
+    font-size: 13px;
+    font-weight: 800;
+    cursor: pointer;
+    text-align: center;
+}
+
+
+/* الزر الأول: الأحدث أولاً */
+.sort-buttons-container .sort-latest {
+    background: #168447;
+    color: #ffffff;
+    border: 1px solid #168447;
+}
+
+
+/* الزر الثاني: الأكثر تفاصيلاً */
+.sort-buttons-container .sort-details {
+    background: #ffffff;
+    color: #c62828;
+    border: 2px solid #c62828;
+}
+
+
+/* الزر الثالث: الأكثر قراءة */
+.sort-buttons-container .sort-reads {
+    background: #111111;
+    color: #ffffff;
+    border: 1px solid #111111;
+}
+
+
+/* تأثير بسيط عند الضغط */
+.sort-buttons-container .sort-button:active {
+    transform: scale(0.98);
+}
+
+
+/* للشاشات الصغيرة والآيفون */
+@media (max-width: 560px) {
+
+    .sort-buttons-container {
+        gap: 6px;
+    }
+
+    .sort-buttons-container .sort-button {
+        min-height: 36px;
+        font-size: 12.5px;
+        padding: 7px 10px;
+    }
+}
