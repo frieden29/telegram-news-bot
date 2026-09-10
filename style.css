@@ -873,3 +873,22 @@ body {
         padding: 7px 10px;
     }
 }
+/* =========================================================
+   شعار الهوية البصرية داخل زر تحديث الأخبار
+   ========================================================= */
+
+.refresh-logo {
+    width: 34px;
+    height: 34px;
+    object-fit: contain;
+    flex-shrink: 0;
+}
+
+.refresh-button {
+    background: #ffffff;
+    color: #d71920;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+}
