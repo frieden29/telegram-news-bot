@@ -244,6 +244,10 @@ let mostReadButton =
     null;
 
 
+let mostDetailsButton =
+    null;
+
+
 let latestNewsButton =
     null;
 
@@ -1409,10 +1413,116 @@ function sortNewsByReads(
         );
 }
 
+function sortNewsByReads(
+    newsItems
+) {
+    // الدالة الموجودة حاليًا
+}
+
+
+/* =========================================================
+   ترتيب الأخبار حسب عدد المطلعين على التفاصيل
+   ========================================================= */
+
+function sortNewsByDetails(
+    newsItems
+) {
+
+    return newsItems
+
+        .map(
+            (
+                news,
+                index
+            ) => {
+
+                const newsId =
+                    createNewsId(
+                        news
+                    );
+
+
+                const stats =
+                    getNewsStats(
+                        newsId
+                    );
+
+
+                return {
+                    news,
+                    index,
+                    details:
+                        Number(
+                            stats.details || 0
+                        )
+                };
+            }
+        )
+
+        .sort(
+            (
+                a,
+                b
+            ) => {
+
+                if (
+                    b.details !==
+                    a.details
+                ) {
+
+                    return (
+                        b.details -
+                        a.details
+                    );
+                }
+
+
+                const aPublished =
+                    Number(
+                        a.news.published_at || 0
+                    );
+
+
+                const bPublished =
+                    Number(
+                        b.news.published_at || 0
+                    );
+
+
+                if (
+                    aPublished !==
+                    bPublished
+                ) {
+
+                    return (
+                        bPublished -
+                        aPublished
+                    );
+                }
+
+
+                return (
+                    a.index -
+                    b.index
+                );
+            }
+        )
+
+        .map(
+            item =>
+                item.news
+        );
+}
+
 
 /* =========================================================
    أزرار ترتيب الأخبار
    ========================================================= */
+
+
+
+/* =========================================================
+   تحديث شكل زر الترتيب المختار
 
 function createSortButtons() {
 
@@ -1446,48 +1556,20 @@ function createSortButtons() {
     }
 
 
-    mostReadButton =
+    const sortContainer =
         document.createElement(
-            "button"
+            "div"
         );
 
 
-    mostReadButton.id =
-        "mostReadButton";
+    sortContainer.className =
+        "sort-buttons-container";
 
 
-    mostReadButton.className =
-        "sort-button";
-
-
-    mostReadButton.type =
-        "button";
-
-
-    mostReadButton.innerHTML =
-        "📖 الأكثر قراءة";
-
-
-    mostReadButton.addEventListener(
-
-        "click",
-
-        () => {
-
-            currentSortMode =
-                "reads";
-
-
-            updateSortButtons();
-
-
-            renderNews(
-                currentNewsItems
-            );
-        }
-    );
-
-
+    /*
+     * الزر الأول:
+     * الأحدث أولاً
+     */
     latestNewsButton =
         document.createElement(
             "button"
@@ -1499,7 +1581,7 @@ function createSortButtons() {
 
 
     latestNewsButton.className =
-        "sort-button active";
+        "sort-button sort-latest active";
 
 
     latestNewsButton.type =
@@ -1530,21 +1612,117 @@ function createSortButtons() {
     );
 
 
-    actions.appendChild(
+    /*
+     * الزر الثاني:
+     * الأكثر تفاصيلاً
+     */
+    mostDetailsButton =
+        document.createElement(
+            "button"
+        );
+
+
+    mostDetailsButton.id =
+        "mostDetailsButton";
+
+
+    mostDetailsButton.className =
+        "sort-button sort-details";
+
+
+    mostDetailsButton.type =
+        "button";
+
+
+    mostDetailsButton.innerHTML =
+        "🔎 الأكثر تفاصيلاً";
+
+
+    mostDetailsButton.addEventListener(
+
+        "click",
+
+        () => {
+
+            currentSortMode =
+                "details";
+
+
+            updateSortButtons();
+
+
+            renderNews(
+                currentNewsItems
+            );
+        }
+    );
+
+
+    /*
+     * الزر الثالث:
+     * الأكثر قراءة
+     */
+    mostReadButton =
+        document.createElement(
+            "button"
+        );
+
+
+    mostReadButton.id =
+        "mostReadButton";
+
+
+    mostReadButton.className =
+        "sort-button sort-reads";
+
+
+    mostReadButton.type =
+        "button";
+
+
+    mostReadButton.innerHTML =
+        "📖 الأكثر قراءة";
+
+
+    mostReadButton.addEventListener(
+
+        "click",
+
+        () => {
+
+            currentSortMode =
+                "reads";
+
+
+            updateSortButtons();
+
+
+            renderNews(
+                currentNewsItems
+            );
+        }
+    );
+
+
+    sortContainer.appendChild(
+        latestNewsButton
+    );
+
+
+    sortContainer.appendChild(
+        mostDetailsButton
+    );
+
+
+    sortContainer.appendChild(
         mostReadButton
     );
 
 
     actions.appendChild(
-        latestNewsButton
+        sortContainer
     );
 }
-
-
-/* =========================================================
-   تحديث شكل زر الترتيب المختار
-   ========================================================= */
-
 function updateSortButtons() {
 
     if (mostReadButton) {
