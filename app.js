@@ -243,11 +243,9 @@ let currentNewsItems =
 let mostReadButton =
     null;
 
-
 let mostDetailsButton =
     null;
-
-
+    
 let latestNewsButton =
     null;
 
