@@ -186,7 +186,13 @@ FACEBOOK_PENDING_FILE = os.path.join(
 # عدد الأخبار المعلقة التي نحاول إعادة نشرها
 # في كل تشغيل للبوت.
 FACEBOOK_PENDING_PER_RUN = 1
-MAX_APP_NEWS = 200
+# مدة الاحتفاظ بالأخبار داخل تطبيق نبض سوريا
+APP_NEWS_RETENTION_DAYS = 3
+
+# حد أمان حتى لا يكبر news.json بشكل غير طبيعي
+MAX_APP_NEWS = 1000
+
+BERLIN_TZ = ZoneInfo("Europe/Berlin")
 BERLIN_TZ = ZoneInfo("Europe/Berlin")
 
 MAX_PUBLISHED_RECORDS = 3000
@@ -1008,14 +1014,38 @@ def save_story_for_app(story):
 
     current = load_app_news()
 
-    cleaned = []
-    seen_links = set()
-    seen_titles = []
+cleaned = []
+seen_links = set()
+seen_titles = []
+
+# أقدم وقت مسموح به داخل التطبيق.
+# أي خبر مرّ على دخوله إلى نبض سوريا أكثر من 3 أيام سيتم حذفه.
+now_ts = int(time.time())
+
+app_cutoff = (
+    now_ts
+    - APP_NEWS_RETENTION_DAYS
+    * 24
+    * 60
+    * 60
+    )
 
     # الخبر الجديد أولاً.
     for item in [new_item] + current:
 
         if not isinstance(item, dict):
+            continue
+
+        # حذف الأخبار التي بقيت في التطبيق أكثر من المدة المحددة.
+        item_published_at = int(
+            item.get("published_at", 0)
+            or 0
+        )
+
+        if (
+            item_published_at > 0
+            and item_published_at < app_cutoff
+        ):
             continue
 
         item_title = clean_title(
