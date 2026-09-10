@@ -1,5 +1,5 @@
 const CACHE_NAME =
-    "nabd-syria-v13";
+    "nabd-syria-v14";
 
 const APP_FILES = [
     "./",
@@ -7,7 +7,8 @@ const APP_FILES = [
     "./style.css",
     "./app.js",
     "./manifest.json",
-    "./logo2.png"
+    "./logo2.png",
+    "./refresh-sy.png"
 ];
 
 
