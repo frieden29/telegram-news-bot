@@ -188,6 +188,10 @@ BERLIN_TZ = ZoneInfo("Europe/Berlin")
 
 MAX_PUBLISHED_RECORDS = 3000
 
+# نقارن تشابه العناوين/الأحداث فقط مع الأخبار المنشورة خلال آخر 48 ساعة.
+# مطابقة الرابط نفسه تبقى على كامل السجل.
+DEDUP_SIMILARITY_WINDOW_HOURS = 48
+
 # عدد الأخبار التي نفحصها من كل مصدر
 MAX_ITEMS_PER_SOURCE = 100
 
@@ -1671,6 +1675,19 @@ def was_published(
         ""
     )
 
+    now_ts = int(
+        time.time()
+    )
+
+    similarity_cutoff = (
+        now_ts
+        - DEDUP_SIMILARITY_WINDOW_HOURS
+        * 60
+        * 60
+    )
+
+    # نفس الرابط = مكرر قطعاً.
+    # نفحص الرابط على كامل السجل.
     for old in published:
 
         old_link = clean_link(
@@ -1680,41 +1697,98 @@ def was_published(
             )
         )
 
-        old_title = old.get(
-            "title",
-            ""
-        )
-
-        # نفس الرابط
         if (
             new_link
             and old_link
             and new_link == old_link
         ):
 
-            return True
-
-        # عنوان شديد التشابه
-        if (
-            title_similarity(
-                new_title,
-                old_title
+            print(
+                "🔁 مكرر بسبب تطابق الرابط:"
             )
-            >= 0.86
-        ):
-
-            return True
-
-        # نفس الحدث تقريباً
-        if (
-            event_similarity(
-                new_title,
-                old_title
+            print(
+                "   الجديد:",
+                clean_title(new_title)
             )
-            >= 0.70
-        ):
+            print(
+                "   السابق:",
+                clean_title(
+                    old.get(
+                        "title",
+                        ""
+                    )
+                )
+            )
 
             return True
+
+
+    # تشابه العنوان/الحدث:
+    # نقارنه فقط مع أخبار آخر 48 ساعة.
+    for old in published:
+
+        old_published_at = int(
+            old.get(
+                "published_at",
+                0
+            )
+            or 0
+        )
+
+        if (
+            old_published_at <= 0
+            or old_published_at < similarity_cutoff
+        ):
+            continue
+
+        old_title = old.get(
+            "title",
+            ""
+        )
+
+        title_score = title_similarity(
+            new_title,
+            old_title
+        )
+
+        if title_score >= 0.92:
+
+            print(
+                f"🔁 مكرر بسبب تشابه العنوان: {title_score:.0%}"
+            )
+            print(
+                "   الجديد:",
+                clean_title(new_title)
+            )
+            print(
+                "   السابق:",
+                clean_title(old_title)
+            )
+
+            return True
+
+
+        event_score = event_similarity(
+            new_title,
+            old_title
+        )
+
+        if event_score >= 0.80:
+
+            print(
+                f"🔁 مكرر بسبب تشابه الحدث: {event_score:.0%}"
+            )
+            print(
+                "   الجديد:",
+                clean_title(new_title)
+            )
+            print(
+                "   السابق:",
+                clean_title(old_title)
+            )
+
+            return True
+
 
     return False
 
