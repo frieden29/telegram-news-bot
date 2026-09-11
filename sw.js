@@ -1,5 +1,5 @@
 const CACHE_NAME =
-    "nabd-syria-v14";
+    "nabd-syria-v15";
 
 const APP_FILES = [
     "./",
