@@ -875,11 +875,10 @@ body {
 }
 /* =========================================================
    شعار الهوية البصرية داخل زر تحديث الأخبار
-   ========================================================= */
-
+  
 .refresh-logo {
-    width: 34px;
-    height: 34px;
+    width: 75px;
+    height: 75px;
     object-fit: contain;
     flex-shrink: 0;
     display: block;
@@ -887,11 +886,12 @@ body {
     z-index: 2;
 }
 
+/* زر تحديث الأخبار */
 .refresh-button {
     background: #ffffff;
     color: #d71920;
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    gap: 8px;
+    gap: 6px;
 }
