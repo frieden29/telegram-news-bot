@@ -925,4 +925,5 @@ body {
 
     white-space: normal;
     text-align: center;
+    transform: translateX(8px);
 }
