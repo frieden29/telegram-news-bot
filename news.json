@@ -1,5 +1,60 @@
 [
   {
+    "title": "الأسبوع بالصور: احتجاجات سوريا، سيلين ديون على خشبة المسرح وحرائق غابات كيتو",
+    "description": "من الاحتجاجات ضد ارتفاع أسعار الوقود في سوريا إلى هجوم رئيس الوزراء الكندي مارك كارني على الاتحاد الأوروبي لحرائق غابات كيتو وعودة سيلين ديون إلى المسرح، تنظر فرانس 24 إلى أكثر صور الأسبوع لفتًا للنظر.",
+    "source": "France 24",
+    "category": "سوريا",
+    "time": "20.09.2026, 15:33",
+    "timestamp": 1789910157,
+    "published_at": 1789911180,
+    "image": "https://s.france24.com/media/display/edae22ca-b343-11f1-8e1c-2b7cd267a8ec/w:1024/p:16x9/AP26259483265880.jpg",
+    "url": "https://www.france24.com/en/middle-east/20260920-the-week-in-pictures-syria-protests-c%C3%A9line-dion-on-stage-and-quito-wildfires"
+  },
+  {
+    "title": "روسيا أم الولايات المتحدة ؟ تحاول سوريا ما بعد الأسد إبقاء كلتا القوتين في اللعب - تحليل",
+    "description": "بينما تعيد السفن الروسية إمداد الوجود العسكري المتبقي لموسكو وتصل الشركات الأمريكية بحثًا عن فرص استثمارية، تحاول دمشق بناء علاقات مع واشنطن دون التخلي عن موسكو.",
+    "source": "The Jerusalem Post",
+    "category": "سوريا",
+    "time": "20.09.2026, 15:32",
+    "timestamp": 1789919718,
+    "published_at": 1789911136,
+    "image": "https://images.jpost.com/image/upload/f_auto,fl_lossy/q_auto/c_fill,g_faces:center,h_720,w_1280/738566",
+    "url": "https://www.jpost.com/middle-east/article-909188"
+  },
+  {
+    "title": "إسرائيل ترصد تحركات الشرع لبناء الجيش السوري.. استعداد سري لمواجهة حزب الله وفصائل عراقية؟",
+    "description": "وسط مساعٍ سورية لإعادة بناء مؤسسات الدولة بعد سنوات طويلة من الحرب، تراقب المؤسسة الأمنية الإسرائيلية باهتمام متزايد مسار إعادة تشكيل الجيش السوري، وسط تقديرات في تل أبيب بأن الرئيس السوري الانتقالي أحمد الشرع يعمل على بناء قوة عسكرية نظامية كبيرة قد يتجاوز دورها تثبيت سلطته في الداخل.",
+    "source": "Euronews عربي",
+    "category": "سوريا",
+    "time": "20.09.2026, 15:31",
+    "timestamp": 1789732248,
+    "published_at": 1789911107,
+    "image": "",
+    "url": "https://arabic.euronews.com/2026/09/18/syria-ahmed-al-sharaa-syrian-army-israel-hezbollah-iraq-weapons"
+  },
+  {
+    "title": "التربية السورية تعيد تفعيل الاختبار الترشيحي للطلبة الأحرار المتقدمين لثانوية 2027",
+    "description": "أعلنت وزارة التربية والتعليم اليوم الأحد، إعادة تفعيل الاختبار الترشيحي للطلبة ‏الأحرار الراغبين بالتقدم لامتحانات الشهادة ‏الثانوية العامة بفرعيها العلمي والأدبي ‏لدورة عام 2027.‏",
+    "source": "سانا",
+    "category": "سوريا",
+    "time": "20.09.2026, 15:31",
+    "timestamp": 1789910474,
+    "published_at": 1789911076,
+    "image": "https://cdn.sananews.sy/2026/09/IMG_20260817_134551_186-3.jpg",
+    "url": "https://sana.sy/education/2585364/"
+  },
+  {
+    "title": "رمضان 2027.. عابد فهد يعود إلى سوريا وتيم حسن يجدد شراكته مع البرقاوي",
+    "description": "تستعد الدراما السورية لرمضان 2027 بموسم متنوع يجمع نجوما بارزين مثل عابد فهد وتيم حسن وبسام كوسا، إلى جانب أعمال تاريخية واجتماعية وكوميدية تعيد شراكات قديمة وتدفع بالإنتاج داخل سوريا إلى الواجهة.",
+    "source": "الجزيرة",
+    "category": "سوريا",
+    "time": "20.09.2026, 15:30",
+    "timestamp": 1789898819,
+    "published_at": 1789911053,
+    "image": "https://www.aljazeera.net/wp-content/uploads/2026/09/ertyui-1789907699.jpg?resize=1920%2C1280&quality=80",
+    "url": "https://www.aljazeera.net/arts/2026/9/20/%d8%b1%d9%85%d8%b6%d8%a7%d9%86-2027-%d8%b9%d8%a7%d8%a8%d8%af-%d9%81%d9%87%d8%af-%d9%8a%d8%b9%d9%88%d8%af-%d8%a5%d9%84%d9%89-%d8%b3%d9%88%d8%b1%d9%8a%d8%a7-%d9%88%d8%aa%d9%8a%d9%85-%d8%ad%d8%b3%d9%86"
+  },
+  {
     "title": "هيئة الطاقة الذرية تدرس سبل مواجهة أكثر الأمراض الوراثية والسرطانية انتشاراً بسوريا",
     "description": "تعمل هيئة الطاقة الذرية السورية ضمن أقسام البيولوجيا الجزيئية والتقانة الحيوية على دراسة لمواجهة الأمراض الوراثية ‏والسرطانية الأكثر انتشاراً في سوريا، في مختبرات الأمراض الوراثية والدراسات الجينومية، من خلال تحديد الطفرات ‏والعوامل الجينية المرتبطة بها، وذلك في إطار المتابعة العلمية والبحثية المستمرة.‏",
     "source": "سانا",
@@ -3322,17 +3377,6 @@
     "url": "https://sana.sy/photos/2583992/"
   },
   {
-    "title": "إسرائيل ترصد تحركات الشرع لبناء الجيش السوري.. استعداد سري لمواجهة حزب الله وفصائل عراقية؟ - Euronews.com",
-    "description": "",
-    "source": "Euronews عربي",
-    "category": "سوريا",
-    "time": "18.09.2026, 14:16",
-    "timestamp": 1789732248,
-    "published_at": 1789733786,
-    "image": "",
-    "url": "https://news.google.com/rss/articles/CBMipAFBVV95cUxNdFpZM1BOLWtJbHJ4MEhKSGZhLUxsYTFtLUY1bGFHN1otdnlMdXg0NkY0cXBScTRjN3RGOUs1dnY1S1RpQy03VUtFaHJjVFBfdFVoU1o1d3drQzlpb29OMGNORFlESU9WeDhEQnhBc2E2UmFhZjB4aGNIMDlrSnQzZmU3NFZNRTVXUlQwb0pSckdKSmRaN1AxMzc1X3JaTlJ4VmxLWQ?oc=5"
-  },
-  {
     "title": "معرض إدلب للكتاب.. تطور في الفعاليات واتساع في الحضور",
     "description": "يشهد معرض إدلب للكتاب بدورته الرابعة تطوراً ملحوظاً مقارنةً بدوراته السابقة، مع اتساع مشاركة دور النشر وتنوع الفعاليات واستقطاب زوار من مختلف المحافظات السورية ومن خارج البلاد، في مشهد يعكس التحول الذي تشهده المدينة في مرحلة ما بعد التحرير.",
     "source": "سانا",
@@ -4915,38 +4959,5 @@
     "published_at": 1789652743,
     "image": "https://cdn.sananews.sy/2026/09/1L3A8129-scaled.jpg",
     "url": "https://sana.sy/locals/2583253/"
-  },
-  {
-    "title": "المسؤول القريب والموكب البعيد.. أي صورة يصدّقها السوريون؟",
-    "description": "المسؤول القريب والموكب البعيد.. أي صورة يصدّقها السوريون؟",
-    "source": "تلفزيون سوريا",
-    "category": "سوريا",
-    "time": "17.09.2026, 15:31",
-    "timestamp": 1789651818,
-    "published_at": 1789651895,
-    "image": "https://www.syria.tv/sites/default/files/styles/article_870_490/public/2026-09/%D9%85%D9%88%D9%83%D8%A8.jpg?itok=BnwES3NZ",
-    "url": "https://www.syria.tv/%D8%A7%D9%84%D9%85%D8%B3%D8%A4%D9%88%D9%84-%D8%A7%D9%84%D9%82%D8%B1%D9%8A%D8%A8-%D9%88%D8%A7%D9%84%D9%85%D9%88%D9%83%D8%A8-%D8%A7%D9%84%D8%A8%D8%B9%D9%8A%D8%AF-%D8%A3%D9%8A-%D8%B5%D9%88%D8%B1%D8%A9-%D9%8A%D8%B5%D8%AF%D9%91%D9%82%D9%87%D8%A7-%D8%A7%D9%84%D8%B3%D9%88%D8%B1%D9%8A%D9%88%D9%86%D8%9F"
-  },
-  {
-    "title": "مصافٍ كهربائية وأنواع مدعومة.. الإعلان عن خطة حكومية لمواجهة أزمة المحروقات في سوريا",
-    "description": "وزارة الطاقة السورية تعلن عن خطة تشمل تفعيل مصاف كهربائية محلية وتوفير أنواع متعددة وأخرى مدعومة من المحروقات في السوق.",
-    "source": "الجزيرة",
-    "category": "سوريا",
-    "time": "17.09.2026, 15:30",
-    "timestamp": 1789636565,
-    "published_at": 1789651848,
-    "image": "https://www.aljazeera.net/wp-content/uploads/2026/09/8678-4-1789646510.jpg?resize=1920%2C1440",
-    "url": "https://www.aljazeera.net/news/2026/9/17/%d9%85%d8%b5%d8%a7%d9%81-%d9%83%d9%87%d8%b1%d8%a8%d8%a7%d8%a6%d9%8a%d8%a9-%d9%88%d8%a3%d9%86%d9%88%d8%a7%d8%b9-%d9%85%d8%af%d8%b9%d9%88%d9%85%d8%a9-%d8%a7%d9%84%d8%a5%d8%b9%d9%84%d8%a7%d9%86"
-  },
-  {
-    "title": "مقتل 3 عناصر أمن سوريين في اشتباك مع مجموعة مرتبطة بداعش في درعا - الأناضول عجانسي",
-    "description": "",
-    "source": "Anadolu Agency",
-    "category": "سوريا",
-    "time": "17.09.2026, 15:17",
-    "timestamp": 1789650264,
-    "published_at": 1789651033,
-    "image": "",
-    "url": "https://news.google.com/rss/articles/CBMivAFBVV95cUxQalhnRU5wOGRSYWx6ZTNmYnpTN3VQaHV6VkM0a2w2VFF2dXBMN0RBSVEyUlBwaXN4Zm5jNUFLUGpCTkJKZm1BSjFEX3Rkc2d5X3B2MEpEUnlCUkpQaVJaVlJaMGgtdXk2N3hKNk1VVGdqUDYzSGgxT0wzeXJzOEN0WnIyR0ZnTlhsaEFhZm12dmQ0dzJ3M2FhTDBMc2tWemo4MEw1czROVWJhX0dpZVpfRUtzZXl2Q3N2YmVVTA?oc=5"
   }
 ]
