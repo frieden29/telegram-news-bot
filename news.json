@@ -1,5 +1,16 @@
 [
   {
+    "title": "انخفاض في درجات الحرارة وأمطار مصحوبة بالرعد في بعض المناطق السورية",
+    "description": "تميل درجات الحرارة للانخفاض لتصبح أدنى من معدلاتها بقليل في المنطقة الساحلية",
+    "source": "سانا",
+    "category": "سوريا",
+    "time": "01.10.2026, 08:00",
+    "timestamp": 1790834356,
+    "published_at": 1790834458,
+    "image": "https://cdn.sananews.sy/2026/10/DAMASCUS-scaled.jpg",
+    "url": "https://sana.sy/locals/2594468/"
+  },
+  {
     "title": "المهاجمون يطلقون النار ويقتلون 7 على حافلة ركاب صغيرة في سوريا - أسوشيتد برس نيوز",
     "description": "",
     "source": "Associated Press",
@@ -5300,16 +5311,5 @@
     "published_at": 1790576139,
     "image": "https://cdn.sananews.sy/2026/09/IMG_9892-scaled.jpg",
     "url": "https://sana.sy/governorates/tartus/2591555/"
-  },
-  {
-    "title": "إطلاق أول مشروع وفق نظام التطوير والاستثمار العقاري الجديد في حلب",
-    "description": "أطلق في مدينة حلب مشروع العلبي بالتعاون بين هيئة الاستثمار ومحافظة حلب، ليكون أول مشروع في سوريا بعد التحرير",
-    "source": "سانا",
-    "category": "سوريا",
-    "time": "28.09.2026, 08:00",
-    "timestamp": 1790573457,
-    "published_at": 1790575257,
-    "image": "https://cdn.sananews.sy/2026/09/0A4A8644-scaled.jpg",
-    "url": "https://sana.sy/governorates/2591325/"
   }
 ]
