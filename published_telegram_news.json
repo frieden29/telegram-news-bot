@@ -1,59 +1,5 @@
 [
   {
-    "title": "يستضيف وزير الخارجية التركي اجتماعًا ثلاثيًا في نيويورك مع نظرائه السوريين والسعوديين - الأناضول أجانسي",
-    "link": "https://news.google.com/rss/articles/CBMizwFBVV95cUxObnFTRDJvQ3JkZjZGVmVoR2Npb2U1eUtpT1l1TkEwamxQZk1DUVB0TzNBQnRXU043QUluLVdUbWVsSFVsMzdlN3NsTVVpYW9KclF4N21qQnlLa2ptZktDcWtMeFdkVVA0aFhMb3hsUXI5NFFwNVNsbzJIWG5nbWkwSjhYS1ZodlhNLXNYS3FmdGllYmp5QVRHbU5iYkFaZElJRmVheVcxamNJU0RVMVpWZE55S080bXRBbHdLRXdmU0k2LXBPYVN1enFVTEY4Y1k?oc=5",
-    "source": "Anadolu Agency",
-    "published_at": 1790150532
-  },
-  {
-    "title": "دمشق.. انطلاق أعمال إعادة تأهيل مطار المزة تمهيداً لتحويله إلى مطار مدني",
-    "link": "https://alikhbariah.com/%d8%af%d9%85%d8%b4%d9%82-%d8%a7%d9%86%d8%b7%d9%84%d8%a7%d9%82-%d8%a3%d8%b9%d9%85%d8%a7%d9%84-%d8%a5%d8%b9%d8%a7%d8%af%d8%a9-%d8%aa%d8%a3%d9%87%d9%8a%d9%84-%d9%85%d8%b7%d8%a7%d8%b1-%d8%a7%d9%84%d9%85/",
-    "source": "الإخبارية السورية",
-    "published_at": 1790151344
-  },
-  {
-    "title": "السجن 30 عاما لفرنسي أُدين بالانضمام لتنظيم الدولة في سوريا",
-    "link": "https://www.aljazeera.net/news/2026/9/23/%d8%a7%d9%84%d8%b3%d8%ac%d9%86-30-%d8%b9%d8%a7%d9%85%d8%a7-%d9%84%d9%81%d8%b1%d9%86%d8%b3%d9%8a-%d8%a3%d8%af%d9%8a%d9%86-%d8%a8%d8%a7%d9%84%d8%a7%d9%86%d8%b6%d9%85%d8%a7%d9%85",
-    "source": "الجزيرة",
-    "published_at": 1790152250
-  },
-  {
-    "title": "الرئيس الشرع: نسعى للحفاظ على وحدة الأراضي السورية واستقلالها",
-    "link": "https://sana.sy/video/2587518/",
-    "source": "سانا",
-    "published_at": 1790152280
-  },
-  {
-    "title": "الرئيس الشرع: المشكلة ليست في سوريا بل بالسياسات الإسرائيلية",
-    "link": "https://sana.sy/video/2587522/",
-    "source": "سانا",
-    "published_at": 1790153139
-  },
-  {
-    "title": "إدارة المعادن الثمينة تصدر التسعيرة اليومية للذهب والمعادن في سوريا",
-    "link": "https://alikhbariah.com/%d8%a5%d8%af%d8%a7%d8%b1%d8%a9-%d8%a7%d9%84%d9%85%d8%b9%d8%a7%d8%af%d9%86-%d8%a7%d9%84%d8%ab%d9%85%d9%8a%d9%86%d8%a9-%d8%aa%d8%b5%d8%af%d8%b1-%d8%a7%d9%84%d8%aa%d8%b3%d8%b9%d9%8a%d8%b1%d8%a9-%d8%a7/",
-    "source": "الإخبارية السورية",
-    "published_at": 1790153168
-  },
-  {
-    "title": "بدء أعمال تأهيل مطار المزة بدمشق لإعادة تصنيفه مطاراً مدنياً",
-    "link": "https://sana.sy/economy/2587531/",
-    "source": "سانا",
-    "published_at": 1790154057
-  },
-  {
-    "title": "استباقاً للسيول.. إجراءات ميدانية لحماية ريف الحسكة من مخاطر الفيضانات",
-    "link": "https://alikhbariah.com/%d8%a7%d8%b3%d8%aa%d8%a8%d8%a7%d9%82%d8%a7%d9%8b-%d9%84%d9%84%d8%b3%d9%8a%d9%88%d9%84-%d8%a5%d8%ac%d8%b1%d8%a7%d8%a1%d8%a7%d8%aa-%d9%85%d9%8a%d8%af%d8%a7%d9%86%d9%8a%d8%a9-%d9%84%d8%ad%d9%85%d8%a7/",
-    "source": "الإخبارية السورية",
-    "published_at": 1790154075
-  },
-  {
-    "title": "وفد سوري في لبنان.. تأكيد على تطوير العلاقات وتعزيز التعاون الحكومي",
-    "link": "https://www.syria.tv/%D9%88%D9%81%D8%AF-%D8%B3%D9%88%D8%B1%D9%8A-%D9%81%D9%8A-%D9%84%D8%A8%D9%86%D8%A7%D9%86-%D8%AA%D8%A3%D9%83%D9%8A%D8%AF-%D8%B9%D9%84%D9%89-%D8%AA%D8%B7%D9%88%D9%8A%D8%B1-%D8%A7%D9%84%D8%B9%D9%84%D8%A7%D9%82%D8%A7%D8%AA-%D9%88%D8%AA%D8%B9%D8%B2%D9%8A%D8%B2-%D8%A7%D9%84%D8%AA%D8%B9%D8%A7%D9%88%D9%86-%D8%A7%D9%84%D8%AD%D9%83%D9%88%D9%85%D9%8A",
-    "source": "تلفزيون سوريا",
-    "published_at": 1790154096
-  },
-  {
     "title": "اجتماع سعودي سوري تركي في نيويورك يبحث تعزيز التعاون الاقتصادي وأمن المنطقة - العربية",
     "link": "https://news.google.com/rss/articles/CBMi7ARBVV95cUxNNWl6RzRZdm1ZUjdaX05QZmtuQ1ZRR2FSMWlzbWpVeTdfX2drNEY0a21BSEhQNU1iS0g5WHJpMHR0Y0ttalBVc0pqMlQ2T3ljM2NmSXlKY3AxMm9Ham5RYjhKdlpnbllXVFFvQTVDOUoxX2lvbGtySUQ5VERDYmRld3RtVDR5OWNMeC10dUh1cVZ2RjNUOTFNakVUUnRFWW9UcjM1SmR2OEdKOWZ5X3FzQUFPZ1ZUdS1WS3dseHNRZGtNbkRjMnQ2NE13SzJ3aEtSalFVMXJjV0s0ajlXaEd0N1JzSEVtMXVVbC1YdlhKR05jaDRlWjdiM1ViUkNHbGhDZFJVeFJWWVNLeS1YbXNFTXFwY1QwMFBWejhaMzVRNnA5UEw3TXR3N1M2dEY3Y0t1eWw1eUY3X3FDa0FVVkFrbkFWWFp5LVU4Rm94ZnpmNkYyenQ0cG5PNXpMMlBzSk9jQUhuTndTT0ZLdTJKTmd3VWhzUGRWZXRYSHlleDBHYXdQSThndnZEcTAzazdPOHFNR1FiSUhiTlFrcVo3OG1COGtoQk1qYmlTNGJEU2oxSXB4YlpWcnl6ekg4dS1VRTZMUFlOX2V1NTd2Nk1INGNmUlNVUC1VZlVPcEpvMjYwV1k4bV9VWWdnZ3dqVkdadnhqR2p3YmxfeFVTNUFfdm9JNktfdFpDUDNyV09sRXYyRXZYS21HR2F1N25BZmtWem1uaVNtZUNGSHpucVBhVnhFelN0ZVdJUUJpU3BodDNrZnhDQkRhMEJaNTN4VV83R0VJemVnY0NMbmlnUjF3R2dBaF9zNDZqLWttdzNCNNIB8gRBVV95cUxQc1llbzJudGgtcHVFb3NfQ0N1ckxXdUx4aS14NjFTeThVcVNYV2MzakhubXBIcTlkVlAxT2doNEpmODRzV3dCMC1rU3VxT281WERGMmlKc2l0WlRncU5RTk1ZWEp0dUdpNUJIZmQtVnJwY2dNY3hUczZSRkUzUzlHbmw1eWF1WnE5RFZmeC1XR25Qa1pxaEZoeXVOWEdRQnR3NVcwcFkxcWpBWVJBUmpjWmx6YmQyb0JZX3JqM3F5NEM1ZkZYcUJGeXYxT3U3eDhSOFAyVFB1cnNlN21jNUVYa3hodk9zWDZHdldRTHFZR1Z3a0dmUHdmVFpkVmdyLUZuM0psY1hjbjVhZ3lkU0RqR2l3bll5N0U2WWNzV2k0QUV6U1NkM2Fxczg3RS13Q3BacHZQLUd4VnFUT3pMMzVWejJ0NExxSFpyQmFlNTlLU1hEdDV1cWhOMktSQ3pkMGdndUZFUHlVUEZTYkZyeFNjSi14U3FEck1yYU9ZNDI0a1lYVXBndXpfRHE3LTlDUHZRaVIzNklqSjNvd1pwOWIweHJtbWxQSld3U3B1YVN0Ni01cFpHSGx6a3lMM1U4Y0Q1TmZFLVRWZ0ZENS12SnIwWF8xUWFOdU5VcjhxMVhiT081QnlfRjR5S2ZLdXZDVEpPVXp3aTgxMHhNbW1TN0Y0LXZFY18yTUl3MGlpbGJ2VzZnN2tibGdDMDdOdzFfaHJOaXEzNkFKbDJyTmhqTUF5bW0xU1dweDM3c1FJSEhCdUpac1FYM2hWUGpweE1iWkVSa1BBMlRNMVl6MTl1Y2xnVTBubUt3RmI1aTk4U0dlVDdjQQ?oc=5",
     "source": "العربية",
@@ -17998,5 +17944,59 @@
     "link": "https://news.google.com/rss/articles/CBMivwFBVV95cUxOa2t5a0NMUHdlOUFaZVZUWEY3YWlyRFo2UFJHM1VRdGZ3akU3UXJZQWUtUzd5WDVIR2pheTdNZS11RHo1bkFUaTdyQXU4aVNjYkhleE11NVNjQWRWeE9wdHowRHpXWEd3aTJvRC1TSXJ6NEpVOEFFbS1lVmx4YzAxVTNWRmFPdlBWX195aC1QRDhxRE90a2h5bklaRTdsRHJmVzlyS2dJR0ZUWkRReU5vUHpYaEFEemNYT3lVZTlvOA?oc=5",
     "source": "Arab News",
     "published_at": 1792406554
+  },
+  {
+    "title": "محافظ السويداء.. المجموعات الخارجة عن القانون تعرقل حل الأزمة",
+    "link": "https://www.aljazeera.net/news/2026/10/19/%d9%85%d8%ad%d8%a7%d9%81%d8%b8-%d8%a7%d9%84%d8%b3%d9%88%d9%8a%d8%af%d8%a7%d8%a1-%d8%a7%d9%84%d9%85%d8%ac%d9%85%d9%88%d8%b9%d8%a7%d8%aa-%d8%a7%d9%84%d8%ae%d8%a7%d8%b1%d8%ac%d8%a9-%d8%b9%d9%86",
+    "source": "الجزيرة",
+    "published_at": 1792429963
+  },
+  {
+    "title": "‏التعليم العالي تعلن شروط مفاضلة القبول والنقل إلى الجامعات السورية الخاصة",
+    "link": "https://sana.sy/education/2611739/",
+    "source": "سانا",
+    "published_at": 1792429971
+  },
+  {
+    "title": "أردوغان: نتلقى أخبار جيدة من سوريا لكن إسرائيل تسعى لإثارة الفوضى",
+    "link": "https://alikhbariah.com/%d8%a3%d8%b1%d8%af%d9%88%d8%ba%d8%a7%d9%86-%d9%86%d8%aa%d9%84%d9%82%d9%89-%d8%a3%d8%ae%d8%a8%d8%a7%d8%b1-%d8%ac%d9%8a%d8%af%d8%a9-%d9%85%d9%86-%d8%b3%d9%88%d8%b1%d9%8a%d8%a7-%d9%84%d9%83%d9%86-%d8%a5/",
+    "source": "الإخبارية السورية",
+    "published_at": 1792429979
+  },
+  {
+    "title": "مقتل عنصر في الجيش السوري إثر هجوم بريف دير الزور الشرقي",
+    "link": "https://www.syria.tv/%D9%85%D9%82%D8%AA%D9%84-%D8%B9%D9%86%D8%B5%D8%B1-%D9%81%D9%8A-%D8%A7%D9%84%D8%AC%D9%8A%D8%B4-%D8%A7%D9%84%D8%B3%D9%88%D8%B1%D9%8A-%D8%A5%D8%AB%D8%B1-%D9%87%D8%AC%D9%88%D9%85-%D8%A8%D8%B1%D9%8A%D9%81-%D8%AF%D9%8A%D8%B1-%D8%A7%D9%84%D8%B2%D9%88%D8%B1-%D8%A7%D9%84%D8%B4%D8%B1%D9%82%D9%8A",
+    "source": "تلفزيون سوريا",
+    "published_at": 1792429988
+  },
+  {
+    "title": "سوريا تحدد سقوفاً جديدة لرسوم الجامعات الخاصة.. تخفيضات تصل إلى 28% للطب البشري - Euronews.com",
+    "link": "https://news.google.com/rss/articles/CBMiuwFBVV95cUxPblBpd2JGcTBFSWVTRmlIaWhxZ0NfTDR3Wm44LVhON0xtdmJVZW5nMmcxN09iMXdkd3p2bjBQX3V1Tms3QW1OWWFXVi1jam5TUXhOY3V5TUZGU2lJZDE1dXIxbDlTZ2tFcVlpRkRWUEVqWFBDVWdFVW51bnZWWEVOQWJJX1p6MUZZVURzUU82LXZPUzBpLVJWTm5hSGtvS2pUUjJ6cDlzdDN0NnptY01keDJwSXpEUXNWd1NF?oc=5",
+    "source": "Euronews عربي",
+    "published_at": 1792429998
+  },
+  {
+    "title": "سوريا تعلن ضبط أشخاص يمارسون الصرافة والحوالات المالية دون ترخيص - العربية",
+    "link": "https://news.google.com/rss/articles/CBMipARBVV95cUxPR19ISnR3SWFWdGpGYUNWY1doeVVLSzh2eHEzRmlrc29fSU5rQVhjZTdMLTN4aU1sekI4Q0NPZjNJSkRudHJPY21qMjQ3cEZIT1F4SUZwOEVrZkxIX0drS0JKZUFVR1lNWlBFVnk2aVJQRHVwbmNkR2hiVU91bE9TZ2RoaEtua0d5UFA5SE1qOXNYOFRZSTFfZi1vbzBBU3lWXzc4M3QxY25PTkFleGN4eHFEb1VsY3l2YU9FSHhERVZ1WVFHcUVURG4zU1ZhQzlZWE0yQWpZZWJDTFYxZW9td2JRNlZJSThXSUZkTVRLQnloN1gzSGFKNGtHVGRGVi0yUHpVSTMxeWZxYWRaZU9lOXRPb3ZwdHlIZ0JlVVNCc05fdF9ZcTl2dE5XZWhCbEVqSDNLbmdfenhaSmtVS2MzeWFBdnRNUzVhT1lGVUg0VTlsdkc3M0NaRHI4VHJZSTJNaVN0VS1UejRURDNCNE9jUzZneklwRWpoZkE5aDJXYzZXeGluUVZ5TnZXRnB4RUtoamM0NE5FckV3cThwQUlFQTdpRkhjdkR4UGVVRTRsY1RqV1dFbU44cVh3bzM5WUFFeXNER3ZSV2NmeFZqdUFrNmlWaXo5S0llZlBOaHpvNkZVcVNEUVJQc1dESktGdy1YSGJpV0trbDBHV0ZZLTJwMV8zWmtfVFpKMzBOSlN5SmVFRjhVZE14c205amVuajNIT0ZyRtIBqgRBVV95cUxOMm96YlBfbUNVWG02V1N2SDdwamZScjRZUnh5aEN2QkkxT0RDcm1kNmNOQ1g2djhZTUcyLUtZdHZPeG0zak9uLXJuMk05LVBmRWxhdjV0RHNrMjBNYlZDamRfT1FPV3Vud0tmNmpJVUJKSjNDYzNBN0tOaFRBdGlXVzZuMHBMUEFNc0NCLUtmZnNBVW52R2hSUlNtbVRic1hMQ1M2cGR2T2U1YUduQkp1dTNPbFRlV1psZ25qZmdVQkhSb0FoY3Z0QzZOMnJ2Y3E5a24xZzYxSzlqSm5TejF0Tll4aHpyZnhKSjNYTFAwb1IxVHJza1IzSWctUnkwalFVRzd5OWpiV1NWcXZKVjJIalRJa08wNmRneExKVHlRaDNoT1NlWmJxVnRBMUdzRnV4X29kX0lYUDNKaXVMcDdhcUl1R016NklhTTVGd3NwODZmOUlfcmVxYzdsWlFtdmFJX1dENV9taXFiXzdVaTBqekFSYTBXcm1HdHhYSUhoa3ppOEJicUtqb1RzSUpQSDlHT2JickFZallGV3ZIZUpJMTdHQWpGdHBPQW1BekZBeFhTYVo0dVFnNGNUak9fY1VSWlBMQ3hhaHM4bXg5T2xZb1NTaHZiU1lVRHBxLWRMLTdndHlSMV9BemNmS3pycFB0cGp5X2RUX1JUblF6NnFac1lScDE5a01Qc3N3b3VIY2E0VlphR0k0LW5DemFuZVdGWEZGWFljZktkZw?oc=5",
+    "source": "العربية",
+    "published_at": 1792430021
+  },
+  {
+    "title": "المناهج الدراسية في سوريا ما بعد الأسد تمجد القومية والجهاد، وتشيطن اليهود، وتجد الدراسة - تايمز أوف إسرائيل",
+    "link": "https://news.google.com/rss/articles/CBMi1wFBVV95cUxQLWV0VmgxNG53aWN6M054dWhZTWNmVWw1Nkx2U1BLdGlINGxMQUwtWXpJQzZnQmtQU0ZYQmRtM0hXa3VmRzJKSTNETUhheGw5c2liTlg4OFRtRmZkeFp0VVN4cS1QcUtNOUFzVm5kakw0cllPMXVNYnBHY0JLNEhrVkhMTjRnN3EtSHdReUdwMkpza3Y0LV9LM3JPOVBWQ1VzdUM4aHNLR1p0OTdUVUlSWmZzWER6NDJEdThsNWRoal9aRGQ2ejVNMXQ1STNKVGYxMkJ4TVRfRQ?oc=5",
+    "source": "The Times of Israel",
+    "published_at": 1792430031
+  },
+  {
+    "title": "مقتل جندي سوري في هجوم شنه مسلحون مجهولون في شرق دير الزور - الأناضول عجانسي",
+    "link": "https://news.google.com/rss/articles/CBMivwFBVV95cUxQMjlNTWI5MkRxRjUtVTdfQ0lPLVdsVnhqaG9rT2k5WnpUTGRqek9TanZ1SUFBMzhoTjNZTFZlU2haMmxTNndDaGJzdllYLVk5NVkySG9zU3NCbWRPYlVwS2syNUxMOHd5bFJVMUw1TzBuVDgtNEpra3QxZFFsRGZDcjlTVkVIWjlZWkJlUDZJZ1pMQ3FIZTh6LXVCeWQ4RHhMaU9tVlVad0lMN2dUMXJjamFBVGtUbEpaWHZyVHpIVQ?oc=5",
+    "source": "Anadolu Agency",
+    "published_at": 1792430052
+  },
+  {
+    "title": "سوريا ولبنان يناقشان عودة اللاجئين وحماية الطفل والرعاية الاجتماعية - عرب نيوز",
+    "link": "https://news.google.com/rss/articles/CBMivwFBVV95cUxOZGdzY1NSNU01TFp6WFctTkczcEZTXzNQN18tOGN3VkxvN21TOVI4QjA1QjV3N213WjJPdFBQLUQ2LTJWSUxPQ3psckYwYkw5b0JNajZkSEFJWlZ3TVU0Zl9UZ1g5N3owNllhRGtxOVF1V1g3NVlzRFY4OXplTks3T3RNTlk4Wl9sSVIyR2VzcHUtcm1Ya084c2dJNjFXQXJVdnZOTmp5dW93akZDRmtNV3FWOV94YkwzalFaTXdXSQ?oc=5",
+    "source": "Arab News",
+    "published_at": 1792430064
   }
 ]
